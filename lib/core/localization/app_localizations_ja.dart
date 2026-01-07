@@ -605,4 +605,49 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get statusPaused => '一時停止中 ⏸️';
+
+  @override
+  String get expiryLabel => '期限';
+
+  @override
+  String get documentNumberLabel => '番号';
+
+  @override
+  String get exportData => 'データエクスポート';
+
+  @override
+  String get exportDataDescription => '全データをJSONファイルにバックアップ';
+
+  @override
+  String get exportDataConfirm => '全てのデータをエクスポートしますか？';
+
+  @override
+  String get export => 'エクスポート';
+
+  @override
+  String get exportSuccess => 'エクスポートが完了しました';
+
+  @override
+  String get exportFailed => 'エクスポートに失敗しました';
+
+  @override
+  String get importData => 'データインポート';
+
+  @override
+  String get importDataDescription => 'JSONファイルからデータを復元';
+
+  @override
+  String get importDataWarning =>
+      '警告：インポートすると、既存の全データが削除されます。バックアップがあることを確認してください。';
+
+  @override
+  String get import => 'インポート';
+
+  @override
+  String importSuccess(Object documentCount, Object memberCount) {
+    return 'インポート完了: $memberCount人, $documentCount件';
+  }
+
+  @override
+  String get importFailed => 'インポートに失敗しました';
 }

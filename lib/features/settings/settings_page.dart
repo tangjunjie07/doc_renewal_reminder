@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'dart:convert';
 import '../../app.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/localization/notification_localizations.dart';
@@ -207,7 +208,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
       // インポート実行
       final file = File(filePath);
-      final importResult = await DataExportService.importFromFile(file);
+      await DataExportService.importFromFile(file);
+      
+      // 再度インポート結果を取得
+      final jsonString = await file.readAsString();
+      final data = json.decode(jsonString) as Map<String, dynamic>;
+      final importResult = await DataExportService.importFromJson(data);
 
       // ローディング閉じる
       if (context.mounted) {

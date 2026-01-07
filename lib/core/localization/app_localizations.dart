@@ -1210,6 +1210,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paused ⏸️'**
   String get statusPaused;
+
+  /// No description provided for @expiryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry'**
+  String get expiryLabel;
+
+  /// No description provided for @documentNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Number'**
+  String get documentNumberLabel;
+
+  /// No description provided for @exportData.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Data'**
+  String get exportData;
+
+  /// No description provided for @exportDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup all data to JSON file'**
+  String get exportDataDescription;
+
+  /// No description provided for @exportDataConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Export all data?'**
+  String get exportDataConfirm;
+
+  /// No description provided for @export.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export;
+
+  /// No description provided for @exportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Export completed successfully'**
+  String get exportSuccess;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed'**
+  String get exportFailed;
+
+  /// No description provided for @importData.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Data'**
+  String get importData;
+
+  /// No description provided for @importDataDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore data from JSON file'**
+  String get importDataDescription;
+
+  /// No description provided for @importDataWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning: Importing will DELETE all existing data. Make sure you have a backup.'**
+  String get importDataWarning;
+
+  /// No description provided for @import.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get import;
+
+  /// No description provided for @importSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Import completed: {memberCount} members, {documentCount} documents'**
+  String importSuccess(Object documentCount, Object memberCount);
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Import failed'**
+  String get importFailed;
 }
 
 class _AppLocalizationsDelegate

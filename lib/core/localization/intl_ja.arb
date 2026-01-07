@@ -230,7 +230,7 @@
   "exportFailed": "エクスポートに失敗しました",
   "importData": "データインポート",
   "importDataDescription": "JSONファイルからデータを復元",
-  "importDataWarning": "警告：インポートすると、新しいデータが追加されます。既存のデータは保持されます。",
+  "importDataWarning": "警告：インポートすると、既存の全データが削除されます。バックアップがあることを確認してください。",
   "import": "インポート",
   "importSuccess": "インポート完了: {memberCount}人, {documentCount}件",
   "importFailed": "インポートに失敗しました"

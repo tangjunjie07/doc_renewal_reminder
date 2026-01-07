@@ -230,7 +230,7 @@
   "exportFailed": "Export failed",
   "importData": "Import Data",
   "importDataDescription": "Restore data from JSON file",
-  "importDataWarning": "Warning: Importing will add new data. Existing data will be preserved.",
+  "importDataWarning": "Warning: Importing will DELETE all existing data. Make sure you have a backup.",
   "import": "Import",
   "importSuccess": "Import completed: {memberCount} members, {documentCount} documents",
   "importFailed": "Import failed"

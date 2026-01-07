@@ -126,6 +126,10 @@ class DataExportService {
     try {
       debugPrint('[DataImport] 📥 データインポート開始');
 
+      // ⚠️ 既存データを全削除（上書きモード）
+      await clearAllData();
+      debugPrint('[DataImport] 🗑️ 既存データを削除しました');
+
       // トランザクション風に全データをインポート
       // 1. 家族メンバーをインポート
       final membersList = data['members'] as List<dynamic>? ?? [];
@@ -140,8 +144,7 @@ class DataExportService {
           final newMember = FamilyMember(
             name: member.name,
             relationship: member.relationship,
-            birthDate: member.birthDate,
-            notes: member.notes,
+            dateOfBirth: member.dateOfBirth,
             createdAt: member.createdAt,
             updatedAt: DateTime.now(),
           );
@@ -179,8 +182,8 @@ class DataExportService {
             documentType: doc.documentType,
             documentNumber: doc.documentNumber,
             expiryDate: doc.expiryDate,
-            reminderDays: doc.reminderDays,
-            reminderFrequency: doc.reminderFrequency,
+            customReminderDays: doc.customReminderDays,
+            customReminderFrequency: doc.customReminderFrequency,
             notes: doc.notes,
             syncToCalendar: doc.syncToCalendar,
             createdAt: doc.createdAt,

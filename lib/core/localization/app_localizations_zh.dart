@@ -603,4 +603,48 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get statusPaused => '已暂停 ⏸️';
+
+  @override
+  String get expiryLabel => '到期日';
+
+  @override
+  String get documentNumberLabel => '号码';
+
+  @override
+  String get exportData => '导出数据';
+
+  @override
+  String get exportDataDescription => '备份所有数据到JSON文件';
+
+  @override
+  String get exportDataConfirm => '是否导出所有数据？';
+
+  @override
+  String get export => '导出';
+
+  @override
+  String get exportSuccess => '导出成功';
+
+  @override
+  String get exportFailed => '导出失败';
+
+  @override
+  String get importData => '导入数据';
+
+  @override
+  String get importDataDescription => '从json文件恢复数据';
+
+  @override
+  String get importDataWarning => '警告：导入将删除所有现有数据。请确保已备份。';
+
+  @override
+  String get import => '导入';
+
+  @override
+  String importSuccess(Object documentCount, Object memberCount) {
+    return '导入完成：$memberCount人，$documentCount件证件';
+  }
+
+  @override
+  String get importFailed => '导入失败';
 }

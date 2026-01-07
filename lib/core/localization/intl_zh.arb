@@ -230,7 +230,7 @@
   "exportFailed": "导出失败",
   "importData": "导入数据",
   "importDataDescription": "从json文件恢复数据",
-  "importDataWarning": "警告：导入将添加新数据。现有数据将保留。",
+  "importDataWarning": "警告：导入将删除所有现有数据。请确保已备份。",
   "import": "导入",
   "importSuccess": "导入完成：{memberCount}人，{documentCount}件证件",
   "importFailed": "导入失败"

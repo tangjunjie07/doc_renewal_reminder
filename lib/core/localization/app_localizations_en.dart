@@ -623,4 +623,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusPaused => 'Paused ⏸️';
+
+  @override
+  String get expiryLabel => 'Expiry';
+
+  @override
+  String get documentNumberLabel => 'Number';
+
+  @override
+  String get exportData => 'Export Data';
+
+  @override
+  String get exportDataDescription => 'Backup all data to JSON file';
+
+  @override
+  String get exportDataConfirm => 'Export all data?';
+
+  @override
+  String get export => 'Export';
+
+  @override
+  String get exportSuccess => 'Export completed successfully';
+
+  @override
+  String get exportFailed => 'Export failed';
+
+  @override
+  String get importData => 'Import Data';
+
+  @override
+  String get importDataDescription => 'Restore data from JSON file';
+
+  @override
+  String get importDataWarning =>
+      'Warning: Importing will DELETE all existing data. Make sure you have a backup.';
+
+  @override
+  String get import => 'Import';
+
+  @override
+  String importSuccess(Object documentCount, Object memberCount) {
+    return 'Import completed: $memberCount members, $documentCount documents';
+  }
+
+  @override
+  String get importFailed => 'Import failed';
 }
