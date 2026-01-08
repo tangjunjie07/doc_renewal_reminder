@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/localization/app_localizations.dart';
+import '../../../core/localization/app_localizations.dart';
 
 /// 証件タイプ関連のユーティリティ
 class DocumentTypeUtils {
   /// 証件タイプの表示名を取得（多言語対応）
   static String getDocumentTypeName(BuildContext context, String documentType) {
-    final localizations = AppLocalizations.of(context);
+    final localizations = AppLocalizations.of(context)!;
     
     switch (documentType) {
       case 'residence_card':

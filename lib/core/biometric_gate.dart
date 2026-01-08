@@ -21,7 +21,9 @@ class BiometricGate extends StatefulWidget {
 class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserver {
   bool _isAuthenticated = false;
   bool _isAuthenticating = false;
+  bool _isCheckingAuth = true; // 認証チェック中フラグ（初期: true）
   DateTime? _lastPausedTime;
+  bool _reauthRequested = false;
 
   @override
   void initState() {
@@ -48,8 +50,20 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
     if (state == AppLifecycleState.paused) {
       // アプリがバックグラウンドに移行
       _lastPausedTime = DateTime.now();
+      // バックグラウンド移行時には認証セッションを中断しておく
+      try {
+        BiometricAuthService.instance.stopAuthentication();
+      } catch (e) {
+        debugPrint('[BiometricGate] stopAuthentication error: $e');
+      }
     } else if (state == AppLifecycleState.resumed) {
       // アプリがフォアグラウンドに復帰
+      // 復帰時も念のため既存の認証を中断してから再確認
+      try {
+        BiometricAuthService.instance.stopAuthentication();
+      } catch (e) {
+        debugPrint('[BiometricGate] stopAuthentication error on resume: $e');
+      }
       _checkReauthenticationRequired();
     }
   }
@@ -67,6 +81,7 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
         if (mounted) {
           setState(() {
             _isAuthenticated = true;
+            _isCheckingAuth = false;
           });
         }
         return;
@@ -81,9 +96,17 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
         if (mounted) {
           setState(() {
             _isAuthenticated = true;
+            _isCheckingAuth = false;
           });
         }
         return;
+      }
+
+      // チェック完了、認証画面を表示
+      if (mounted) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
       }
 
       // 認証実行（1回のみ、失敗しても繰り返さない）
@@ -94,6 +117,7 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
       if (mounted) {
         setState(() {
           _isAuthenticated = true;
+          _isCheckingAuth = false;
         });
       }
     }
@@ -103,20 +127,39 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
   Future<void> _checkReauthenticationRequired() async {
     try {
       // 既に認証中の場合は何もしない（無限ループ防止）
-      if (_isAuthenticating) return;
-      
+      if (_isAuthenticating) {
+        debugPrint('[BiometricGate] _checkReauthenticationRequired: already authenticating, skip');
+        return;
+      }
+
+      // 再認証要求が既に出ていればスキップ
+      if (_reauthRequested) {
+        debugPrint('[BiometricGate] _checkReauthenticationRequired: reauth already requested, skip');
+        return;
+      }
+
       if (_isAuthenticated && _lastPausedTime != null) {
         final now = DateTime.now();
         final duration = now.difference(_lastPausedTime!);
-        
+        debugPrint('[BiometricGate] _checkReauthenticationRequired: duration=${duration.inMinutes}min');
+
         // 5分以上経過していたら再認証
         if (duration.inMinutes >= 5) {
+          // 再認証フラグを立てて二重トリガーを防止
+          _reauthRequested = true;
           if (mounted) {
             setState(() {
               _isAuthenticated = false;
             });
           }
+
+          // lastPausedTimeをクリアして同じ復帰で何度も走らないようにする
+          _lastPausedTime = null;
+
           await _authenticate();
+
+          // 再認証完了後にフラグをリセット
+          _reauthRequested = false;
         }
       }
     } catch (e) {
@@ -183,10 +226,10 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
       }
     } catch (e) {
       debugPrint('[BiometricGate] Authentication error: $e');
-      // クラッシュ防止：エラー時はアプリを開く（開発中の安全策）
+      // クラッシュ防止：エラー時は認証中状態を解除し、アプリはロックされたままにする
       if (mounted) {
         setState(() {
-          _isAuthenticated = true; // false → true に変更
+          _isAuthenticated = false;
           _isAuthenticating = false;
         });
       }
@@ -198,6 +241,30 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
     if (_isAuthenticated) {
       // 認証成功 → 通常のアプリ画面を表示
       return widget.child;
+    }
+
+    // 認証チェック中はシンプルなスプラッシュ画面を表示
+    // （ローカライゼーションが初期化されるまで待つ）
+    if (_isCheckingAuth) {
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.secondary,
+              ],
+            ),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+        ),
+      );
     }
 
     // AppLocalizationsが初期化されていない可能性があるため、安全に取得
@@ -228,7 +295,7 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
               Icon(
                 Icons.fingerprint,
                 size: 80,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
               const SizedBox(height: 32),
               Text(
@@ -242,7 +309,7 @@ class _BiometricGateState extends State<BiometricGate> with WidgetsBindingObserv
               Text(
                 biometricRequiredDescription,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
               ),
               const SizedBox(height: 48),

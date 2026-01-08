@@ -187,6 +187,7 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin requires this
     final l10n = AppLocalizations.of(context)!;
     final filteredDocs = _getFilteredDocuments();
     final sortedDocs = _getSortedDocuments(filteredDocs);

@@ -57,17 +57,15 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       _expiryDate = widget.document!.expiryDate;
       _customReminderDays = widget.document!.customReminderDays;
       _customReminderFrequency = widget.document!.customReminderFrequency;
-      _syncToCalendar = widget.document!.syncToCalendar;
-      
+      _syncToCalendar = false; // 編集時は常にfalse
       // 編集画面: nullの場合は元のドキュメントのタイプのデフォルト値を設定
-      // これにより、編集画面でカードタイプを変更してもリマインダー設定は保持される
       _customReminderDays ??= _getDefaultReminderDays(widget.document!.documentType);
       _customReminderFrequency ??= _getDefaultReminderFrequency(widget.document!.documentType);
     } else {
       // 新規作成時: デフォルトポリシーの日数と頻度を設定
       _customReminderDays = _getDefaultReminderDays(_selectedType);
       _customReminderFrequency = _getDefaultReminderFrequency(_selectedType);
-      _syncToCalendar = false; // 新規作成時はカレンダー自動同期をOFFに
+      _syncToCalendar = false; // 新規作成時もカレンダー自動同期をOFFに
     }
 
     _animationController = AnimationController(
@@ -100,6 +98,9 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     super.dispose();
   }
 
+  // NOTE: カレンダー同期機能はDocumentAllListPageに移行済み
+  // これらのメソッドは将来の拡張用に保持
+  // ignore: unused_element
   Future<void> _addToCalendar() async {
     if (_expiryDate == null) return;
 
@@ -179,6 +180,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
 
   // 保存時にサイレントにカレンダーに追加（エラーメッセージは表示しない）
   // 過去日の場合はダイアログを表示せずにスキップ
+  // ignore: unused_element
   Future<void> _addToCalendarSilently() async {
     if (_expiryDate == null) return;
 
@@ -353,24 +355,50 @@ class _DocumentEditPageState extends State<DocumentEditPage>
               }
             }
           
-          // カレンダーダイアログが閉じた後に「保存しました」メッセージを表示
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(l10n.documentAdded)),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          // カレンダー同期がある場合はダイアログで隠れないよう遅延して長めに表示
+          if (shouldSyncToCalendar) {
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(l10n.documentAdded)),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            }
+          } else {
+            // カレンダー同期なしは従来通り即時表示（短め）
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(l10n.documentAdded)),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            }
+          }
           // 「次を追加」後は通常の処理（ページに留まる）
         } else {
           // カレンダー同期データを準備
@@ -786,90 +814,97 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       },
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2.5,
-      ),
-      itemCount: types.length,
-      itemBuilder: (context, index) {
-        final type = types[index];
-        final isSelected = _selectedType == type['type'];
-        
-        return InkWell(
-          onTap: () {
-            setState(() {
-              _selectedType = type['type'] as String;
-              // 新規画面: カードタイプ変更時にデフォルト値を適用
-              // 編集画面: ユーザーが選択した値を保持（変更しない）
-              if (widget.document == null) {
-                _customReminderDays = _getDefaultReminderDays(_selectedType);
-                _customReminderFrequency = _getDefaultReminderFrequency(_selectedType);
-              }
-            });
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              gradient: isSelected
-                  ? LinearGradient(
-                      colors: type['colors'] as List<Color>,
-                    )
-                  : null,
-              color: isSelected
-                  ? null
-                  : Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest
-                      .withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected
-                    ? Colors.transparent
-                    : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                width: 1,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: (type['colors'] as List<Color>)[0].withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  type['icon'] as IconData,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  type['label'] as String,
-                  style: TextStyle(
-                    color: isSelected
-                        ? Colors.white
-                        : Theme.of(context).colorScheme.onSurface,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
+    final isEditMode = widget.document != null;
+    return AbsorbPointer(
+      absorbing: isEditMode,
+      child: Opacity(
+        opacity: isEditMode ? 0.5 : 1.0,
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.5,
           ),
-        );
-      },
+          itemCount: types.length,
+          itemBuilder: (context, index) {
+            final type = types[index];
+            final isSelected = _selectedType == type['type'];
+            return InkWell(
+              onTap: !isEditMode
+                  ? () {
+                      setState(() {
+                        _selectedType = type['type'] as String;
+                        // 新規画面: カードタイプ変更時にデフォルト値を適用
+                        if (!isEditMode) {
+                          _customReminderDays = _getDefaultReminderDays(_selectedType);
+                          _customReminderFrequency = _getDefaultReminderFrequency(_selectedType);
+                        }
+                      });
+                    }
+                  : null,
+              borderRadius: BorderRadius.circular(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: type['colors'] as List<Color>,
+                        )
+                      : null,
+                  color: isSelected
+                      ? null
+                      : Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? Colors.transparent
+                        : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    width: 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: (type['colors'] as List<Color>)[0].withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      type['icon'] as IconData,
+                      color: isSelected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      type['label'] as String,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -1062,7 +1097,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         return InkWell(
           onTap: () {
             setState(() {
-              _customReminderFrequency = freq['value'] as String?;
+              _customReminderFrequency = freq['value'];
             });
           },
           borderRadius: BorderRadius.circular(12),

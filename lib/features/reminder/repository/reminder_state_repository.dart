@@ -24,7 +24,7 @@ class ReminderStateRepository {
     if (kIsWeb) {
       final box = await HiveProvider.getReminderStateBox();
       return box.values
-          .map((map) => ReminderState.fromMap(Map<String, dynamic>.from(map as Map)))
+          .map((map) => ReminderState.fromMap(Map<String, dynamic>.from(map)))
           .toList();
     } else {
       final db = await DBProvider.database;
@@ -39,7 +39,7 @@ class ReminderStateRepository {
       final box = await HiveProvider.getReminderStateBox();
       final map = box.get(id);
       return map != null 
-          ? ReminderState.fromMap(Map<String, dynamic>.from(map as Map))
+          ? ReminderState.fromMap(Map<String, dynamic>.from(map))
           : null;
     } else {
       final db = await DBProvider.database;
@@ -59,7 +59,7 @@ class ReminderStateRepository {
       for (var key in box.keys) {
         final map = box.get(key);
         if (map != null) {
-          final state = ReminderState.fromMap(Map<String, dynamic>.from(map as Map));
+          final state = ReminderState.fromMap(Map<String, dynamic>.from(map));
           if (state.documentId == documentId) {
             return state;
           }
@@ -118,7 +118,7 @@ class ReminderStateRepository {
       for (var key in box.keys) {
         final map = box.get(key);
         if (map != null) {
-          final state = ReminderState.fromMap(Map<String, dynamic>.from(map as Map));
+          final state = ReminderState.fromMap(Map<String, dynamic>.from(map));
           if (state.documentId == documentId) {
             keysToDelete.add(key);
           }
@@ -146,7 +146,7 @@ class ReminderStateRepository {
       for (var key in box.keys) {
         final map = box.get(key);
         if (map != null) {
-          final state = ReminderState.fromMap(Map<String, dynamic>.from(map as Map));
+          final state = ReminderState.fromMap(Map<String, dynamic>.from(map));
           if (state.status == ReminderStatus.reminding) {
             result.add(state);
           }
@@ -173,7 +173,7 @@ class ReminderStateRepository {
       for (var key in box.keys) {
         final map = box.get(key);
         if (map != null) {
-          final state = ReminderState.fromMap(Map<String, dynamic>.from(map as Map));
+          final state = ReminderState.fromMap(Map<String, dynamic>.from(map));
           if (state.status == ReminderStatus.paused &&
               state.expectedFinishDate != null &&
               state.expectedFinishDate!.isBefore(now)) {

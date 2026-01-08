@@ -4,7 +4,6 @@ import '../../../core/database/hive_provider.dart';
 import '../../../core/localization/app_localizations.dart';
 import '../repository/family_repository.dart';
 import '../model/family_member.dart';
-import '../../documents/ui/document_edit_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// 家族メンバー追加/編集画面（製品レベルUI）
@@ -21,7 +20,6 @@ class _FamilyEditPageState extends State<FamilyEditPage>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  late FamilyRepository _repository;
   late AnimationController _animationController;
 
   String _relationship = 'self';
@@ -74,7 +72,6 @@ class _FamilyEditPageState extends State<FamilyEditPage>
     } else {
       await DBProvider.database;
     }
-    _repository = FamilyRepository();
   }
 
   Future<void> _checkAndSetDefaultRelationship() async {

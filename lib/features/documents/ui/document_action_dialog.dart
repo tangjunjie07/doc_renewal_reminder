@@ -178,10 +178,7 @@ class _DocumentActionDialogState extends State<DocumentActionDialog> {
       setState(() => _isLoading = true);
       
       final engine = ReminderEngine();
-      await engine.confirmRenewalStarted(
-        documentId: widget.document.id!,
-        expectedFinishDate: widget.document.expiryDate,
-      );
+      await engine.confirmRenewalCompleted(widget.document.id!);
       
       // 通知をキャンセル
       final scheduler = ReminderScheduler();
@@ -361,7 +358,6 @@ class _DocumentActionDialogState extends State<DocumentActionDialog> {
 
   /// 有効期限日に最終警告通知をスケジュール
   Future<void> _scheduleExpiryDateNotification() async {
-    final l10n = AppLocalizations.of(context)!;
     final expiryDate = widget.document.expiryDate;
     final now = DateTime.now();
     
@@ -420,7 +416,6 @@ class _DocumentActionDialogState extends State<DocumentActionDialog> {
   }
 
   String _getExpiryNotificationBody(String memberName) {
-    final l10n = AppLocalizations.of(context)!;
     final type = _getDocumentTypeLabel(widget.document.documentType);
     return '$memberNameさんの$typeは本日が有効期限です。更新をお忘れなく！';
   }

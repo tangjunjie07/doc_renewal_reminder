@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/notification_service.dart';
-import '../documents/repository/document_repository.dart';
-import '../family/repository/family_repository.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// 通知情報一覧画面
@@ -69,7 +67,7 @@ class _NotificationListPageState extends State<NotificationListPage> {
 
     if (confirmed == true) {
       try {
-        await NotificationService.instance.cancelNotification(id);
+        await NotificationService.instance.cancel(id);
         await _loadNotifications();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -427,22 +427,8 @@ class _SettingsPageState extends State<SettingsPage> {
             title: Text(l10n.securitySettings),
             subtitle: Text(l10n.securitySettingsDescription),
           ),
-          SwitchListTile(
-            secondary: Icon(
-              _biometricAuthEnabled ? Icons.fingerprint : Icons.fingerprint_outlined,
-              color: _biometricAuthEnabled ? Colors.blue : Colors.grey,
-            ),
-            title: Text(l10n.biometricAuth),
-            subtitle: Text(
-              _biometricAvailable
-                  ? (_availableBiometrics.isNotEmpty
-                      ? l10n.biometricAvailable(_availableBiometrics.join(', '))
-                      : l10n.biometricNextStartup)
-                  : l10n.biometricNotAvailable,
-            ),
-            value: _biometricAuthEnabled,
-            onChanged: _biometricAvailable ? _toggleBiometricAuth : null,
-          ),
+          // 生体認証は段階的導入のため、設定画面では非表示にする
+          const SizedBox.shrink(),
           const Divider(thickness: 2),
           // データエクスポート/インポート
           ListTile(

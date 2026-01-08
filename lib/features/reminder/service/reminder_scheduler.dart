@@ -27,7 +27,7 @@ class ReminderScheduler {
   final ReminderEngine _reminderEngine;
 
   // 高危期の開始時期（有効期限の何日前から第二防衛線を開始するか）
-  static const int HIGH_RISK_DAYS_BEFORE = 30;
+  static const int highRiskDaysBefore = 30;
 
   ReminderScheduler({
     NotificationService? notificationService,
@@ -88,6 +88,8 @@ class ReminderScheduler {
       await _notificationService.cancel(documentId * 1000 + 0); // 第一防衛線
       await _notificationService.cancel(documentId * 1000 + 1); // 第二防衛線
       await _notificationService.cancel(documentId * 1000 + 2); // 第三防衛線
+      // 有効期限日用の特別通知もキャンセル（ID: documentId*1000 + 999）
+      await _notificationService.cancel(documentId * 1000 + 999);
       print('[ReminderScheduler] ✅ Cancelled all notifications for document $documentId');
     } catch (e) {
       print('[ReminderScheduler] Error canceling notification for document $documentId: $e');
@@ -114,7 +116,6 @@ class ReminderScheduler {
 
       // ポリシーを取得
       final policy = await PolicyService.getPolicyForDocument(document);
-      final daysUntilExpiry = PolicyService.daysUntilExpiry(document);
 
       // 通知内容を生成
       final title = await _generateNotificationTitle(document, member);
@@ -126,7 +127,7 @@ class ReminderScheduler {
         Duration(days: document.customReminderDays ?? policy.daysBeforeExpiry),
       );
       final highRiskDate = document.expiryDate.subtract(
-        Duration(days: HIGH_RISK_DAYS_BEFORE),
+        Duration(days: highRiskDaysBefore),
       );
       final now = DateTime.now();
 

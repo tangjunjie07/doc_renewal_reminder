@@ -66,21 +66,32 @@ class BiometricAuthService {
       }
 
       // 認証実行
-      final didAuthenticate = await _localAuth.authenticate(
-        localizedReason: reason,
-        options: const AuthenticationOptions(
-          stickyAuth: true, // 認証ダイアログを維持
-          biometricOnly: true, // 生体認証のみ（PIN/パスワードフォールバック無効）
-        ),
-      );
+      bool didAuthenticate = false;
+      try {
+        didAuthenticate = await _localAuth.authenticate(
+          localizedReason: reason,
+          options: const AuthenticationOptions(
+            stickyAuth: false, // stickyAuthを無効化してライフサイクル問題を回避
+            biometricOnly: true, // 生体認証のみ（PIN/パスワードフォールバック無効）
+          ),
+        );
 
-      if (didAuthenticate) {
-        debugPrint('[BiometricAuth] ✅ Authentication successful');
-      } else {
-        debugPrint('[BiometricAuth] ❌ Authentication failed');
+        if (didAuthenticate) {
+          debugPrint('[BiometricAuth] ✅ Authentication successful');
+        } else {
+          debugPrint('[BiometricAuth] ❌ Authentication failed');
+        }
+
+        return didAuthenticate;
+      } finally {
+        // 認証セッションが残っている可能性があるため、明示的に停止を試みる
+        try {
+          await _localAuth.stopAuthentication();
+        } catch (e) {
+          // 無視: プラットフォームによっては例外を投げることがある
+          debugPrint('[BiometricAuth] stopAuthentication error: $e');
+        }
       }
-
-      return didAuthenticate;
     } on PlatformException catch (e) {
       debugPrint('[BiometricAuth] ❌ Authentication error: $e');
       return false;
@@ -147,5 +158,15 @@ class BiometricAuthService {
     debugPrint('[BiometricAuth] Available biometrics: ${biometrics.map((b) => b.name).join(', ')}');
     debugPrint('[BiometricAuth] User enabled: $isEnabled');
     debugPrint('[BiometricAuth] Should authenticate: ${await shouldAuthenticateOnStartup()}');
+  }
+
+  /// 認証セッションを明示的に停止する（ライフサイクル復帰時の安全対策）
+  Future<void> stopAuthentication() async {
+    try {
+      await _localAuth.stopAuthentication();
+      debugPrint('[BiometricAuth] stopAuthentication called');
+    } catch (e) {
+      debugPrint('[BiometricAuth] stopAuthentication error: $e');
+    }
   }
 }

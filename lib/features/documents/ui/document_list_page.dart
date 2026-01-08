@@ -7,7 +7,6 @@ import '../../../core/localization/app_localizations.dart';
 import '../repository/document_repository.dart';
 import '../model/document.dart';
 import '../../../features/family/model/family_member.dart';
-import '../../../features/family/repository/family_repository.dart';
 import 'document_edit_page.dart';
 import 'document_action_dialog.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -24,7 +23,6 @@ class DocumentListPage extends StatefulWidget {
 
 class _DocumentListPageState extends State<DocumentListPage>
     with SingleTickerProviderStateMixin {
-  late DocumentRepository _repository;
   List<Document> _documents = [];
   bool _isLoading = true;
   late AnimationController _animationController;
@@ -51,7 +49,6 @@ class _DocumentListPageState extends State<DocumentListPage>
     } else {
       await DBProvider.database;
     }
-    _repository = DocumentRepository();
     await _loadDocuments();
   }
 

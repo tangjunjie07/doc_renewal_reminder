@@ -19,7 +19,6 @@ class FamilyListPage extends StatefulWidget {
 
 class _FamilyListPageState extends State<FamilyListPage>
     with SingleTickerProviderStateMixin {
-  FamilyRepository? _repository;
   List<FamilyMember> _members = [];
   Map<int, int> _documentCounts = {}; // メンバーIDごとの証件数
   bool _isLoading = true;
@@ -47,7 +46,6 @@ class _FamilyListPageState extends State<FamilyListPage>
     } else {
       await DBProvider.database;
     }
-    _repository = FamilyRepository();
     await _loadMembers();
   }
 
