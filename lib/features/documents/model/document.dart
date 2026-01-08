@@ -48,7 +48,7 @@ class Document {
     this.policyId,
     this.customReminderDays,
     this.customReminderFrequency,
-    this.syncToCalendar = true,
+    this.syncToCalendar = false,
     this.notes,
     this.createdAt,
     this.updatedAt,

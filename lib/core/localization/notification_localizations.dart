@@ -109,4 +109,30 @@ class NotificationLocalizations {
         return '証件の有効期限が近づいています。確認してください。';
     }
   }
+
+  /// 期限切れ通知の本文を取得（第三防衛線用）
+  static String getExpiredBody(String languageCode) {
+    switch (languageCode) {
+      case 'en':
+        return 'Expired! Please renew immediately.';
+      case 'zh':
+        return '已过期！请立即更新。';
+      case 'ja':
+      default:
+        return '期限切れ！至急更新してください';
+    }
+  }
+
+  /// 通知タイトル（フォールバック用）
+  static String getNotificationTitleGeneric(String languageCode) {
+    switch (languageCode) {
+      case 'en':
+        return 'Document Renewal Required';
+      case 'zh':
+        return '证件需要更新';
+      case 'ja':
+      default:
+        return '証件の更新が必要です';
+    }
+  }
 }

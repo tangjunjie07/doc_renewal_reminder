@@ -7,7 +7,6 @@ import 'dart:convert';
 import '../../app.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/localization/notification_localizations.dart';
-import '../../core/background/background_task_service.dart';
 import 'service/data_export_service.dart';
 import 'db_debug_page.dart';
 import 'notification_list_page.dart';
@@ -378,96 +377,9 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             },
           ),
-          // バックグラウンドタスク設定（デバッグモードでのみ表示）
-          if (kDebugMode && !kIsWeb) ...[
-            const Divider(thickness: 2),
-            const ListTile(
-              leading: Icon(Icons.work, color: Colors.purple),
-              title: Text('バックグラウンドタスク'),
-              subtitle: Text('アプリ終了時もリマインダーチェック'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.play_arrow, color: Colors.green),
-              title: const Text('テストタスクを実行'),
-              subtitle: const Text('10秒後に一回限りのタスクを実行'),
-              onTap: () async {
-                try {
-                  await BackgroundTaskService.registerOneOffTask();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ テストタスクを登録しました（10秒後に実行）'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('❌ エラー: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.refresh, color: Colors.blue),
-              title: const Text('定期タスクを再登録'),
-              subtitle: const Text('24時間ごとのタスクを再設定'),
-              onTap: () async {
-                try {
-                  await BackgroundTaskService.registerPeriodicTask();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ 定期タスクを再登録しました'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('❌ エラー: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cancel, color: Colors.red),
-              title: const Text('全タスクをキャンセル'),
-              subtitle: const Text('すべてのバックグラウンドタスクを停止'),
-              onTap: () async {
-                try {
-                  await BackgroundTaskService.cancelAllTasks();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('✅ 全タスクをキャンセルしました'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('❌ エラー: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
-          ],
+          // バックグラウンドタスク設定は削除（3段階防御システムに移行）
+          // RepeatInterval.dailyがOS kernelレベルで永久ループを管理
+          
           // Database Debug - デバッグモードでのみ表示
           if (kDebugMode)
             ListTile(

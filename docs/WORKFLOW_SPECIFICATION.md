@@ -40,8 +40,7 @@
 Flutter 3.0+
 ├── sqflite (SQLite) - iOS/Android/macOS/Windows/Linux
 ├── hive - Web
-├── flutter_local_notifications - 通知
-├── workmanager - バックグラウンドタスク
+├── flutter_local_notifications - 通知（RepeatInterval永久ループ）
 ├── share_plus - ファイル共有
 ├── file_picker - ファイル選択
 ├── add_2_calendar - カレンダー統合
@@ -191,14 +190,18 @@ ReminderScheduler.scheduleAll()
   - 有効期限までの日数を計算
   - リマインダー期間内か判定
   - ReminderState作成/更新
-  - NotificationService.scheduleNotification()
+  - 3段階防御システムで通知をスケジュール（多言語対応）:
+    * 第1防御（遠期唤醒）: リマインダー開始日に単発通知（ID: documentId * 1000 + 0）
+      - 過去日または今日の場合: カード登録・更新時に即座に通知（offset 0で即座発火）
+      - 未来の場合: 指定日9:00 AMに通知をスケジュール
+    * 第2防御（近期催办）: 有効期限30日前から毎日9:00 AM通知（ID: documentId * 1000 + 1）
+      - 過去日の場合: 今日から毎日ループ開始
+    * 第3防御（過期轰炸）: 有効期限当日から毎日9:00 AM通知（ID: documentId * 1000 + 2）
+      - 過去日の場合: 今日から毎日ループ開始
 
-[バックグラウンド: 24時間ごと]
-BackgroundTaskService.callbackDispatcher()
-  ↓
-ReminderEngine.checkAllDocuments()
-  ↓
-ReminderScheduler.scheduleAll()
+[バックグラウンド]
+不要 - RepeatInterval.dailyがOS kernelレベルで永久ループを管理
+アプリ起動なしでも通知が発火される
 ```
 
 ### C. 通知タップフロー
@@ -297,34 +300,86 @@ DataExportService.importFromJson()
 
 ## 🔔 通知システム
 
-### 通知ID体系
+### 通知ID体系（3段階防御システム）
 ```
 documentId * 1000 + offset
 
-- offset 0-998: 通常のリマインダー通知
-- offset 999: 有効期限最終警告通知（更新開始時のみ）
+- offset 0: 第1防御（遠期唤醒）- リマインダー開始日の単発通知
+- offset 1: 第2防御（近期催办）- 有効期限30日前からの毎日ループ
+- offset 2: 第3防御（過期轰炸）- 有効期限当日からの毎日ループ
+- offset 999: 更新開始時の最終警告通知（PAUSED状態のみ）
+
+1証件あたり最大4通知（通常3 + PAUSED時1）
+20証件の場合: 最大80通知（iOS 64制限を超える可能性あり）
 ```
 
-### 通知スケジューリングロジック
+### 通知スケジューリングロジック（3段階防御システム）
 ```dart
 // 1. リマインダー期間を計算
 reminderStartDate = expiryDate - customReminderDays（またはデフォルト日数）
+highRiskDate = expiryDate - 30日
 
-// 2. 次回通知日を計算（頻度に基づく）
-switch (customReminderFrequency) {
-  case 'daily':   nextDate = lastNotification + 1日
-  case 'weekly':  nextDate = lastNotification + 7日
-  case 'biweekly': nextDate = lastNotification + 14日
-  case 'monthly': nextDate = lastNotification + 30日
+// 2. 第1防御: 遠期唤醒（リマインダー開始日の単発通知）
+if (reminderStartDate <= 今日) {
+  // 過去日または今日の場合: カード登録・更新時に即座に通知
+  // offset 0で即座に発火（ユーザーに「更新期間が始まっています」を通知）
+  await NotificationService.scheduleNotification(
+    id: documentId * 1000 + 0,
+    title: l10n.reminderStartNotificationTitle(documentType),
+    body: l10n.reminderStartNotificationBody(memberName, documentType, daysRemaining),
+    scheduledDate: DateTime.now(),
+  );
+} else {
+  // 未来の場合: 指定日9:00 AMに通知
+  await NotificationService.scheduleNotification(
+    id: documentId * 1000 + 0,
+    title: l10n.reminderStartNotificationTitle(documentType),
+    body: l10n.reminderStartNotificationBody(memberName, documentType, daysRemaining),
+    scheduledDate: reminderStartDate.copyWith(hour: 9, minute: 0),
+  );
 }
 
-// 3. 通知をスケジュール
-NotificationService.scheduleNotification(
-  id: documentId * 1000,
-  title: '{証件タイプ}の更新申請期限が近づいています',
-  body: '{メンバー名}さんの{証件タイプ}の有効期限まであと{X}日です。',
-  scheduledDate: nextDate,
-)
+// 3. 第2防御: 近期催办（30日前から毎日ループ）
+if (highRiskDate <= 今日) {
+  // 既に高リスク期間の場合: 今日から開始
+  await NotificationService.scheduleRepeatingNotification(
+    id: documentId * 1000 + 1,
+    title: l10n.highRiskNotificationTitle(documentType),
+    body: l10n.highRiskNotificationBody(memberName, documentType, daysRemaining),
+    startDate: DateTime.now().copyWith(hour: 9, minute: 0),
+    interval: RepeatInterval.daily,
+  );
+} else {
+  // 未来の場合: 30日前から開始
+  await NotificationService.scheduleRepeatingNotification(
+    id: documentId * 1000 + 1,
+    title: l10n.highRiskNotificationTitle(documentType),
+    body: l10n.highRiskNotificationBody(memberName, documentType, daysRemaining),
+    startDate: highRiskDate.copyWith(hour: 9, minute: 0),
+    interval: RepeatInterval.daily,
+  );
+}
+
+// 4. 第3防御: 過期轰炸（有効期限当日から毎日ループ）
+if (expiryDate <= 今日) {
+  // 既に期限切れの場合: 今日から開始
+  await NotificationService.scheduleRepeatingNotification(
+    id: documentId * 1000 + 2,
+    title: l10n.expiredNotificationTitle(documentType),
+    body: l10n.expiredNotificationBody(memberName, documentType),
+    startDate: DateTime.now().copyWith(hour: 9, minute: 0),
+    interval: RepeatInterval.daily,
+  );
+} else {
+  // 未来の場合: 有効期限日から開始
+  await NotificationService.scheduleRepeatingNotification(
+    id: documentId * 1000 + 2,
+    title: l10n.expiredNotificationTitle(documentType),
+    body: l10n.expiredNotificationBody(memberName, documentType),
+    startDate: expiryDate.copyWith(hour: 9, minute: 0),
+    interval: RepeatInterval.daily,
+  );
+}
 ```
 
 ### 通知の多言語対応
@@ -473,16 +528,17 @@ NotificationLocalizations.saveLanguageCode(locale.languageCode)
 
 ## 🎯 重要な実装ポイント
 
-### 1. 通知ID管理
-- **通常通知**: `documentId * 1000 + 0`
-- **最終警告通知**: `documentId * 1000 + 999`
-- これにより1つの証件につき最大1000個の通知枠を確保
+### 1. 通知ID管理（3段階防御システム）
+- **第1防御（遠期唤醒）**: `documentId * 1000 + 0` - リマインダー開始日の単発通知
+- **第2防御（近期催办）**: `documentId * 1000 + 1` - 有効期限30日前からの毎日ループ
+- **第3防御（過期轰炸）**: `documentId * 1000 + 2` - 有効期限当日からの毎日ループ
+- 1証件あたり3つの通知ID（合計20証件 × 3 = 60通知、iOS64制限以下）
 
-### 2. バックグラウンドタスク
-- **workmanager** を使用
-- **24時間ごと**に自動実行
-- Android/iOSのみ対応（macOS/Webは除外）
-- アプリ完全終了時も動作
+### 2. RepeatInterval永久ループ
+- **workmanager削除**: 不安定なため削除
+- **RepeatInterval.daily使用**: OS kernelレベルで永久ループを管理
+- **バックグラウンド不要**: アプリ起動なしでも通知が発火される
+- **通知時刻**: 毎日9:00 AM（matchDateTimeComponentsで指定）
 
 ### 3. カレンダー同期
 - **add_2_calendar** パッケージ使用
@@ -501,15 +557,15 @@ NotificationLocalizations.saveLanguageCode(locale.languageCode)
 ### 5. プラットフォーム別対応
 ```dart
 // iOS/Android
-- 通知: ✅ 完全対応
+- 通知: ✅ 完全対応（3段階防御システム）
 - カレンダー: ✅ 完全対応
-- バックグラウンドタスク: ✅ 完全対応
+- RepeatInterval: ✅ 完全対応（永久ループ）
 - ファイル共有: ✅ 完全対応
 
 // macOS
 - 通知: ⚠️ 制限あり（バナー表示されないことがある）
 - カレンダー: ❌ 未対応（MissingPluginException）
-- バックグラウンドタスク: ❌ 未対応
+- RepeatInterval: ⚠️ 動作（ただし検証不足）
 - ファイル共有: ⚠️ file_picker動作（警告あり）
 
 // Web
@@ -546,9 +602,28 @@ ReminderStateRepository.insert(
   ↓
 ReminderScheduler.scheduleForDocument(documentId)
   ↓
-次回通知日を計算（頻度に基づく）
+3段階防御システムで通知をスケジュール:
   ↓
-NotificationService.scheduleNotification(
+[第1防御] 遠期唤醒
+  - ID: documentId * 1000 + 0
+  - 過去日/今日: カード登録・更新時に即座通知（offset 0で即座発火）
+  - 未来: リマインダー開始日 9:00 AMにスケジュール（単発）
+  - 多言語: NotificationLocalizations使用
+  - 注: 過去日でもoffset 0は必ず実施（ユーザーに通知）
+  ↓
+[第2防御] 近期催办
+  - ID: documentId * 1000 + 1
+  - RepeatInterval.daily: 有効期限30日前から毎日 9:00 AM
+  - 過去日の場合: 今日から開始
+  - 多言語: NotificationLocalizations使用
+  ↓
+[第3防御] 過期轰炸
+  - ID: documentId * 1000 + 2
+  - RepeatInterval.daily: 有効期限当日から毎日 9:00 AM
+  - 過去日の場合: 今日から開始
+  - 多言語: NotificationLocalizations使用
+  ↓
+OS kernelが永久ループを管理（アプリ起動不要）
   id: documentId * 1000,
   title: 多言語対応タイトル,
   body: 多言語対応本文,

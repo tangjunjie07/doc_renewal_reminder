@@ -418,10 +418,18 @@ Phase 3.6（生体認証）により、以下が追加されます：
   - ✅ 多言語対応（**上書き警告メッセージ含む**）
   - ✅ macOSでの動作確認完了
 - Phase 8.5.2: ❌ **未着手**（通知情報一覧）
-- Phase 8.5.3: ✅ **完了**（バックグラウンド通知）
-  - ✅ workmanager統合（24時間ごとの定期タスク）
-  - ✅ BackgroundTaskService実装
-  - ✅ Android/iOS対応
+- Phase 8.1.1: ✅ **完了**（3段階防御通知システム）
+  - ✅ workmanager削除（不安定なため削除）
+  - ✅ BackgroundTaskService削除
+  - ✅ RepeatInterval永久ループ実装
+  - ✅ 3段階防御システム実装:
+    * 第1防御（遠期唤醒）: リマインダー開始日の単発通知
+    * 第2防御（近期催办）: 有効期限30日前から毎日ループ
+    * 第3防御（過期轰炸）: 有効期限当日から毎日ループ
+  - ✅ NotificationService拡張（scheduleRepeatingNotification）
+  - ✅ ReminderScheduler完全書き換え
+  - ✅ 通知ID管理（documentId * 1000 + {0,1,2}）
+  - ✅ ドキュメント更新（WORKFLOW_SPECIFICATION.md）
 - Phase 8.7: ✅ **完了**（通知キャンセル・更新ワークフロー）
   - ✅ DocumentActionDialog実装
   - ✅ 通知状態管理UI（更新開始/完了ボタン）
@@ -430,22 +438,45 @@ Phase 3.6（生体認証）により、以下が追加されます：
   - ✅ 多言語対応（15個の新キー）
 - Phase 8.8: ❌ **未着手**（自動テスト）
 - Phase 3.6: ❌ **未着手**（生体認証）
+
+## Phase 8.1.1: 3段階防御通知システム（2026年1月8日） ✅ 完了
+
+### 1. workmanager削除 ✅
+- [🟢] pubspec.yamlからworkmanager ^0.5.2削除
+- [🟢] lib/core/background/background_task_service.dart削除
+- [🟢] main.dartのBackgroundTaskService初期化削除
+
+### 2. RepeatInterval永久ループ実装 ✅
+- [🟢] NotificationService拡張
+  - scheduleRepeatingNotification()メソッド追加
+  - RepeatInterval.daily対応（matchDateTimeComponents使用）
+  - cancel()メソッド（旧cancelNotification()をリネーム）
+  - 非推奨メソッドの後方互換ラッパー
+- [🟢] 通知時刻: 毎日9:00 AM（OS kernelレベルの永久ループ）
+
+### 3. 3段階防御システム ✅
+- [🟢] ReminderScheduler完全書き換え
+  - **第1防御（遠期唤醒）**: リマインダー開始日の単発通知（ID: documentId * 1000 + 0）
+  - **第2防御（近期催办）**: 有効期限30日前から毎日ループ（ID: documentId * 1000 + 1）
+  - **第3防御（過期轰炸）**: 有効期限当日から毎日ループ（ID: documentId * 1000 + 2）
+- [🟢] 通知クォータ: 20証件 × 3 = 60通知（iOS 64制限以下）
+- [🟢] 過去日付対応: 即座に通知 + 毎日ループ開始
+
+### 4. ドキュメント更新 ✅
+- [🟢] WORKFLOW_SPECIFICATION.md更新
+  - 技術スタック（workmanager削除）
+  - 通知システムフロー（3段階防御説明）
+  - プラットフォーム別対応（RepeatInterval記載）
+- [🟢] IMPLEMENTATION_PROGRESS.md更新（本セクション追加）
+
+### 5. コンパイル検証 ✅
+- [🟢] flutter pub get実行（workmanager削除確認）
+- [❌] flutter run -d macos（コンパイルテスト待ち）
+- [❌] iOS/Android実機テスト待ち
+
 ## Phase 8.5: 追加機能実装（Week 7.5）
 
-### Phase 8.5.3: バックグラウンド通知機能 ✅ 完了
-- [🟢] workmanager パッケージ統合（^0.5.2）
-- [🟢] BackgroundTaskService実装
-  - callbackDispatcher（isolateで実行）
-  - 24時間ごとの定期タスク登録
-  - 一回限りタスク（テスト用）
-  - タスクキャンセル機能
-- [🟢] プラットフォーム対応
-  - Android/iOS対応（main.dartで初期化）
-  - macOS/Web除外（プラットフォームチェック）
-- [🟢] バックグラウンドでのリマインダーチェック
-  - アプリ完全終了時も24時間ごとに実行
-  - 全証件のリマインダー状態確認
-  - 通知の自動スケジュール
+### Phase 8.1.1は上記参照
 
 ### Phase 8.5.1: データエクスポート/インポート機能 ✅ 完了
 - [🟢] DataExportService実装

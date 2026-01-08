@@ -8,7 +8,6 @@ import 'core/database/hive_provider.dart';
 import 'core/notification_service.dart';
 import 'core/localization/notification_localizations.dart';
 import 'core/widgets/startup_debug_page.dart';
-import 'core/background/background_task_service.dart';
 import 'features/reminder/service/reminder_scheduler.dart';
 
 void main() async {
@@ -36,21 +35,11 @@ void main() async {
         await NotificationLocalizations.saveLanguageCode('ja');
       }
       
-      // ✅ Schedule all reminders on app startup (既存処理 - 削除しない)
+      // ✅ Schedule all reminders on app startup
+      // 新仕様: 3段階防御システム（RepeatInterval使用）
       final scheduler = ReminderScheduler();
       await scheduler.scheduleAll();
-      print('[Main] ✅ All reminders scheduled on app startup');
-      
-      // 🆕 Initialize background task service (追加処理)
-      // Note: workmanager only supports Android/iOS
-      if (defaultTargetPlatform == TargetPlatform.android || 
-          defaultTargetPlatform == TargetPlatform.iOS) {
-        await BackgroundTaskService.initialize();
-        await BackgroundTaskService.registerPeriodicTask();
-        print('[Main] ✅ Background task service initialized and registered');
-      } else {
-        print('[Main] ℹ️ Background tasks not supported on this platform');
-      }
+      print('[Main] ✅ All reminders scheduled with 3-tier defense system');
     }
 
     // Note: Default policies are now handled by PolicyService

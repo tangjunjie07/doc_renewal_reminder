@@ -335,37 +335,45 @@ dependencies:
 * リアルタイムで状態更新
 * 通知操作が正常に動作
 
-### 8.5.3 バックグラウンド通知機能 ✅ **完了**（Phase 8.1として実装）
+### 8.5.3 バックグラウンド通知機能 ✅ **完了**（Phase 8.1.1として再実装）
 
-#### 実装状況
-* ✅ BackgroundTaskService実装（lib/core/background/）
-* ✅ workmanagerパッケージ統合
-* ✅ 24時間ごとの自動チェック
-* ✅ ReminderEngine・ReminderScheduler統合
-* ✅ iOS/Android対応（macOS/Web除外）
-* ✅ 初回実行15分後、以降24時間ごと
+#### 実装状況（2026年1月8日更新）
+* ✅ **workmanager削除**（不安定なため削除）
+* ✅ **BackgroundTaskService削除**
+* ✅ **3段階防御システム実装**（RepeatInterval永久ループ）
+* ✅ NotificationService拡張（scheduleRepeatingNotification追加）
+* ✅ ReminderScheduler完全書き換え
+* ✅ iOS/Android対応（macOS部分対応）
 
 #### 実装詳細
 ```dart
-// BackgroundTaskService
-- initialize(): workmanager初期化、タスク登録
-- callbackDispatcher(): バックグラウンド実行ロジック
-  1. 多言語設定読み込み
-  2. ReminderEngine.checkAllDocuments()
-  3. ReminderScheduler.scheduleAll()
+// 3段階防御システム
+第1防御（遠期唤醒）: documentId * 1000 + 0
+  - リマインダー開始日の単発通知
+  - 過去日の場合: 即座に発火
+
+第2防御（近期催办）: documentId * 1000 + 1
+  - 有効期限30日前から毎日9:00 AM通知
+  - RepeatInterval.daily使用
+
+第3防御（過期轰炸）: documentId * 1000 + 2
+  - 有効期限当日から毎日9:00 AM通知
+  - RepeatInterval.daily使用
 ```
 
 #### 技術依存
 ```yaml
 dependencies:
-  workmanager: ^0.5.2
+  flutter_local_notifications: ^16.3.3
+  # workmanager: 削除済み
 ```
 
 #### 完成標準（全て達成）
-* ✅ アプリ完全終了状態でも24時間ごとに自動チェック
-* ✅ リマインダー期間に入った証件を確実に通知
-* ✅ バッテリー消費最小化（24時間に1回のみ）
+* ✅ アプリ完全終了状態でもOS kernelが永久ループ管理
+* ✅ リマインダー期間に入った証件を確実に通知（3段階防御）
+* ✅ バッテリー消費最小化（OS管理のRepeatInterval）
 * ✅ 完全オフライン動作
+* ✅ 通知クォータ最適化（20証件 × 3 = 60通知、iOS 64制限以下）
 
 ### 8.5.4 プッシュ通知検討 🟢 低優先度
 

@@ -65,7 +65,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       // 新規作成時: デフォルトポリシーの日数と頻度を設定
       _customReminderDays = _getDefaultReminderDays(_selectedType);
       _customReminderFrequency = _getDefaultReminderFrequency(_selectedType);
-      _syncToCalendar = true; // 新規作成時はカレンダー自動同期をONに
+      _syncToCalendar = false; // 新規作成時はカレンダー自動同期をOFFに
     }
 
     _animationController = AnimationController(

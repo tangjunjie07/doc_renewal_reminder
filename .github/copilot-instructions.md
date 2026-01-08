@@ -24,10 +24,9 @@ Key features:
 ## Technology Stack
 - **Framework**: Flutter 3.0+
 - **Storage**: SQLite (sqflite) for iOS/Android/macOS, Hive for web
-- **Notifications**: flutter_local_notifications
-- **Background**: workmanager (iOS/Android only)
-- **Calendar**: add_2_calendar (iOS/Android only)
+- **Notifications**: flutter_local_notifications (RepeatInterval permanent loop)
 - **Data Sharing**: share_plus, file_picker
+- **Calendar**: add_2_calendar (iOS/Android only)
 - **Internationalization**: flutter_intl (ARB files)
 - **Other**: path_provider, shared_preferences
 
@@ -50,7 +49,12 @@ Key features:
 5. ✅ Reminder engine & state machine (ReminderEngine, ReminderState)
 6. ✅ Local notification system (with multi-language support)
 7. ✅ Multi-language integration (ja/en/zh)
-8. ✅ Phase 8.1: Background tasks (workmanager)
+8. ✅ Phase 8.1.1: **3-tier defense notification system**
+   - Removed workmanager (unstable)
+   - Implemented RepeatInterval permanent loop
+   - Tier 1: Single notification at reminder start date
+   - Tier 2: Daily loop 30 days before expiry
+   - Tier 3: Daily loop from expiry date
 9. ✅ Phase 8.3: Calendar sync (add_2_calendar)
 10. ✅ Phase 8.4: Notification action dialog (DocumentActionDialog)
 11. ✅ Phase 8.5.1: **Data export/import (JSON backup with overwrite mode)**
@@ -71,12 +75,11 @@ Key features:
 
 ## Key Implementation Details
 
-### Notification ID System
+### Notification ID System (3-Tier Defense)
 ```
-documentId * 1000 + offset
-
-- offset 0-998: Regular reminder notifications
-- offset 999: Final expiry warning (when renewal started)
+Tier 1: documentId * 1000 + 0 (Single notification at reminder start)
+Tier 2: documentId * 1000 + 1 (Daily loop 30 days before expiry)
+Tier 3: documentId * 1000 + 2 (Daily loop from expiry date)
 ```
 
 ### State Machine (ReminderState)
@@ -97,8 +100,8 @@ NORMAL → REMINDING (auto) → PAUSED (user "start renewal") → NORMAL (user "
 | Feature | iOS/Android | macOS | Web |
 |---------|-------------|-------|-----|
 | Notifications | ✅ Full | ⚠️ Limited | ❌ No |
-| Background Tasks | ✅ Yes | ❌ No | ❌ No |
-| Calendar Sync | ✅ Yes | ❌ No | ❌ No |
+| Background Tasks | ✅ Ye(3-tier defense) | ⚠️ Limited | ❌ No |
+| RepeatInterval | ✅ Yes (permanent loop) | ⚠️ Yes (untested)❌ No |
 | Data Export/Import | ✅ Yes | ✅ Yes | ⚠️ Partial |
 
 ## Coding Guidelines
@@ -119,9 +122,10 @@ NORMAL → REMINDING (auto) → PAUSED (user "start renewal") → NORMAL (user "
 
 ## Important Notes for AI
 1. **Read WORKFLOW_SPECIFICATION.md first** - it contains the complete system design, data models, state machine, and all workflows
-2. **Data import is destructive** - always warn users about data deletion
-3. **Platform limitations** - check platform before implementing features (e.g., calendar sync only on mobile)
-4. **Multi-language** - all user-facing text must go through l10n system
-5. **Testing priority** - Phase 8 mobile testing is critical before release
+2. **3-tier defense system** - notifications use RepeatInterval.daily for permanent loops (no background tasks needed)
+3. **Data import is destructive** - always warn users about data deletion
+4. **Platform limitations** - check platform before implementing features (e.g., calendar sync only on mobile)
+5. **Multi-language** - all user-facing text must go through l10n system
+6. **Testing priority** - Phase 8 mobile testing is critical before release
 
 When suggesting code, ensure it aligns with the PRD requirements and current development phase. Refer to WORKFLOW_SPECIFICATION.md for detailed implementation patterns.

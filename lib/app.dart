@@ -52,7 +52,10 @@ class _MyAppState extends State<MyApp> {
         return deviceLocale ?? const Locale('ja');
       },
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF334155), // Slate - 落ち着いたモダンな配色
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
       ),
       localizationsDelegates: const [

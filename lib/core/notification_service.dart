@@ -94,8 +94,8 @@ class NotificationService {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'doc_renewal_reminder',
-      '証件更新リマインダー',
-      channelDescription: '証件の有効期限が近づいた際の通知',
+      'Document Renewal Reminder',
+      channelDescription: 'Notifications for document expiration reminders',
       importance: Importance.high,
       priority: Priority.high,
     );
@@ -124,8 +124,8 @@ class NotificationService {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'doc_renewal_reminder',
-      '証件更新リマインダー',
-      channelDescription: '証件の有効期限が近づいた際の通知',
+      'Document Renewal Reminder',
+      channelDescription: 'Notifications for document expiration reminders',
       importance: Importance.high,
       priority: Priority.high,
     );
@@ -151,12 +151,16 @@ class NotificationService {
     );
   }
 
-  /// 定期通知を設定（daily）
-  Future<void> scheduleDailyNotification({
+  /// 繰り返し通知を設定（周期的リマインダー）
+  /// 
+  /// [startDate] から指定した [interval] で繰り返し通知
+  /// RepeatInterval.daily = 毎日同じ時刻に通知（永久ループ）
+  Future<void> scheduleRepeatingNotification({
     required int id,
     required String title,
     required String body,
-    required DateTime scheduledTime,
+    required DateTime startDate,
+    required RepeatInterval interval,
     String? payload,
   }) async {
     await initialize();
@@ -164,8 +168,8 @@ class NotificationService {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       'doc_renewal_reminder',
-      '証件更新リマインダー',
-      channelDescription: '証件の有効期限が近づいた際の通知',
+      'Document Renewal Reminder',
+      channelDescription: 'Notifications for document expiration reminders',
       importance: Importance.high,
       priority: Priority.high,
     );
@@ -178,23 +182,67 @@ class NotificationService {
       macOS: iosDetails,
     );
 
+    // startDateの時刻を使用して繰り返し通知を設定
+    final scheduledTime = tz.TZDateTime.from(startDate, tz.local);
+
     await _notifications.zonedSchedule(
       id,
       title,
       body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
+      scheduledTime,
       details,
       payload: payload,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
+      matchDateTimeComponents: _getMatchComponents(interval),
     );
   }
 
-  /// 通知をキャンセル
-  Future<void> cancelNotification(int id) async {
+  /// RepeatIntervalに応じたDateTimeComponentsを取得
+  DateTimeComponents _getMatchComponents(RepeatInterval interval) {
+    switch (interval) {
+      case RepeatInterval.daily:
+        return DateTimeComponents.time; // 毎日同じ時刻
+      case RepeatInterval.weekly:
+        return DateTimeComponents.dayOfWeekAndTime; // 毎週同じ曜日・時刻
+      default:
+        return DateTimeComponents.time;
+    }
+  }
+
+  /// 通知をキャンセル（単発・繰り返し両方に対応）
+  Future<void> cancel(int id) async {
     await _notifications.cancel(id);
+  }
+
+  /// 定期通知を設定（daily）
+  /// 
+  /// 🔴 非推奨: scheduleRepeatingNotification() を使用してください
+  @Deprecated('Use scheduleRepeatingNotification() instead')
+  Future<void> scheduleDailyNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
+    String? payload,
+  }) async {
+    await scheduleRepeatingNotification(
+      id: id,
+      title: title,
+      body: body,
+      startDate: scheduledTime,
+      interval: RepeatInterval.daily,
+      payload: payload,
+    );
+  }
+
+  /// 通知をキャンセル（単発・繰り返し両方に対応）
+  /// 
+  /// 🔴 非推奨: cancel() を使用してください
+  @Deprecated('Use cancel() instead')
+  Future<void> cancelNotification(int id) async {
+    await cancel(id);
   }
 
   /// 全通知をキャンセル

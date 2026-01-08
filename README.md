@@ -23,8 +23,7 @@ A Flutter cross-platform app for managing document renewals and providing intell
 
 - **Framework**: Flutter 3.0+
 - **Storage**: SQLite (sqflite) for iOS/Android/macOS, Hive for web
-- **Notifications**: flutter_local_notifications
-- **Background**: workmanager (iOS/Android only)
+- **Notifications**: flutter_local_notifications (RepeatInterval permanent loop)
 - **Calendar**: add_2_calendar (iOS/Android only)
 - **Data Sharing**: share_plus, file_picker
 - **Internationalization**: flutter_intl (ARB files)
@@ -34,8 +33,8 @@ A Flutter cross-platform app for managing document renewals and providing intell
 
 | Feature | iOS/Android | macOS | Web |
 |---------|-------------|-------|-----|
-| Notifications | ✅ Full | ⚠️ Limited | ❌ No |
-| Background Tasks | ✅ Yes | ❌ No | ❌ No |
+| Notifications | ✅ Full (3-tier defense) | ⚠️ Limited | ❌ No |
+| RepeatInterval | ✅ Yes (permanent loop) | ⚠️ Yes (untested) | ❌ No |
 | Calendar Sync | ✅ Yes | ❌ No | ❌ No |
 | Data Export/Import | ✅ Yes | ✅ Yes | ⚠️ Partial |
 
@@ -47,7 +46,7 @@ A Flutter cross-platform app for managing document renewals and providing intell
 3. ✅ Rule-driven reminder system (DocumentType with default reminder days)
 4. ✅ Reminder engine & state machine (ReminderEngine, ReminderState)
 5. ✅ Local notification system (multi-language support)
-6. ✅ Background tasks (24-hour periodic check via workmanager)
+6. ✅ **3-tier defense notification system** (RepeatInterval permanent loop) - Phase 8.1.1
 7. ✅ Calendar sync (add_2_calendar for iOS/Android)
 8. ✅ Notification action dialog (DocumentActionDialog)
 9. ✅ **Data export/import (JSON backup with overwrite mode)** - Phase 8.5.1
@@ -82,11 +81,8 @@ lib/
 │   │   ├── intl_en.arb            # English
 │   │   └── intl_zh.arb            # Chinese
 │   │
-│   ├── background/
-│   │   └── background_task_service.dart # 24-hour periodic task (workmanager)
-│   │
 │   ├── notifications/
-│   │   └── notification_service.dart # Central notification management
+│   │   └── notification_service.dart # Central notification management (3-tier defense)
 │   │
 │   ├── utils/
 │   │   ├── date_utils.dart
@@ -200,12 +196,16 @@ flutter run -d chrome
 
 ## 🔔 Key Implementation Details
 
-### Notification ID System
+### Notification ID System (3-Tier Defense)
 ```
 documentId * 1000 + offset
 
-- offset 0-998: Regular reminder notifications
-- offset 999: Final expiry warning (when renewal started)
+- offset 0: Tier 1 (遠期唤醒) - Single notification at reminder start
+- offset 1: Tier 2 (近期催办) - Daily loop 30 days before expiry
+- offset 2: Tier 3 (過期轰炸) - Daily loop from expiry date
+- offset 999: Final warning (when renewal started, PAUSED state)
+
+3 notifications per document (60 total for 20 documents, under iOS 64 limit)
 ```
 
 ### State Machine
