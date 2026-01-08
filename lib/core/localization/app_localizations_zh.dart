@@ -491,6 +491,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cancelNotification => '取消通知';
 
   @override
+  String get cancelAllNotifications => '全部取消';
+
+  @override
+  String get cancelAllNotificationsConfirmation => '确定要取消所有通知吗？此操作无法撤销。';
+
+  @override
+  String get allNotificationsCancelled => '已取消所有通知';
+
+  @override
   String get cancelNotificationConfirmation => '确定要取消此通知吗？';
 
   @override
@@ -623,6 +632,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get export => '导出';
 
   @override
+  String get shareBackupFile => '共享备份文件';
+
+  @override
   String get exportSuccess => '导出成功';
 
   @override
@@ -647,4 +659,54 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get importFailed => '导入失败';
+
+  @override
+  String get securitySettings => '安全设置';
+
+  @override
+  String get securitySettingsDescription => '生物识别认证和隐私设置';
+
+  @override
+  String get biometricAuth => '使用生物识别锁定';
+
+  @override
+  String biometricAvailable(String types) {
+    return '可用: $types';
+  }
+
+  @override
+  String get biometricNextStartup => '下次启动时将需要生物识别认证';
+
+  @override
+  String get biometricNotAvailable => '生物识别认证不可用';
+
+  @override
+  String get biometricEnabled => '生物识别认证已启用';
+
+  @override
+  String get biometricDisabled => '生物识别认证已禁用';
+
+  @override
+  String get authenticationFailed => '认证失败';
+
+  @override
+  String get biometricRequired => '需要生物识别认证';
+
+  @override
+  String get biometricRequiredDescription => '请进行认证以使用应用';
+
+  @override
+  String get authenticate => '认证';
+
+  @override
+  String get unlockApp => '使用应用需要认证';
+
+  @override
+  String get enableBiometricPrompt => '请进行认证以启用生物识别';
+
+  @override
+  String get dataBackup => '数据备份';
+
+  @override
+  String get dataBackupDescription => '导出和导入数据';
 }

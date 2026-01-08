@@ -181,6 +181,9 @@
   "noScheduledNotifications": "No scheduled notifications",
   "noScheduledNotificationsDesc": "Notifications will be scheduled when you add documents",
   "cancelNotification": "Cancel Notification",
+  "cancelAllNotifications": "Cancel All",
+  "cancelAllNotificationsConfirmation": "Cancel all notifications? This action cannot be undone.",
+  "allNotificationsCancelled": "All notifications cancelled",
   "cancelNotificationConfirmation": "Cancel this notification?",
   "notificationCancelled": "Notification cancelled",
   "notificationId": "Notification ID",
@@ -226,6 +229,7 @@
   "exportDataDescription": "Backup all data to JSON file",
   "exportDataConfirm": "Export all data?",
   "export": "Export",
+  "shareBackupFile": "Share backup file",
   "exportSuccess": "Export completed successfully",
   "exportFailed": "Export failed",
   "importData": "Import Data",
@@ -233,5 +237,28 @@
   "importDataWarning": "Warning: Importing will DELETE all existing data. Make sure you have a backup.",
   "import": "Import",
   "importSuccess": "Import completed: {memberCount} members, {documentCount} documents",
-  "importFailed": "Import failed"
+  "importFailed": "Import failed",
+  "securitySettings": "Security",
+  "securitySettingsDescription": "Biometric authentication and privacy settings",
+  "biometricAuth": "Lock with Biometrics",
+  "@biometricAvailable": {
+    "placeholders": {
+      "types": {
+        "type": "String"
+      }
+    }
+  },
+  "biometricAvailable": "Available: {types}",
+  "biometricNextStartup": "Biometric authentication will be required on next startup",
+  "biometricNotAvailable": "Biometric authentication is not available",
+  "biometricEnabled": "Biometric authentication enabled",
+  "biometricDisabled": "Biometric authentication disabled",
+  "authenticationFailed": "Authentication failed",
+  "biometricRequired": "Biometric Authentication Required",
+  "biometricRequiredDescription": "Please authenticate to use the app",
+  "authenticate": "Authenticate",
+  "unlockApp": "Authentication required to use the app",
+  "enableBiometricPrompt": "Please authenticate to enable biometric authentication",
+  "dataBackup": "Data Backup",
+  "dataBackupDescription": "Export and import data"
 }

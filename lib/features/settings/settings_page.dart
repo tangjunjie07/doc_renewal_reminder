@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
 import '../../app.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/localization/notification_localizations.dart';
+import '../../core/biometric_auth_service.dart';
 import 'service/data_export_service.dart';
 import 'db_debug_page.dart';
 import 'notification_list_page.dart';
@@ -21,11 +23,15 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   String? _savedLanguageCode;
+  bool _biometricAuthEnabled = false;
+  bool _biometricAvailable = false;
+  List<String> _availableBiometrics = [];
 
   @override
   void initState() {
     super.initState();
     _loadSavedLanguage();
+    _loadBiometricSettings();
   }
 
   Future<void> _loadSavedLanguage() async {
@@ -35,6 +41,80 @@ class _SettingsPageState extends State<SettingsPage> {
       setState(() {
         _savedLanguageCode = savedCode;
       });
+    }
+  }
+
+  Future<void> _loadBiometricSettings() async {
+    try {
+      final authService = BiometricAuthService.instance;
+      final canAuth = await authService.canCheckBiometrics();
+      final biometrics = await authService.getAvailableBiometrics();
+      final isEnabled = await authService.isBiometricAuthEnabled();
+
+      if (mounted) {
+        setState(() {
+          _biometricAvailable = canAuth;
+          _availableBiometrics = biometrics.map((b) => b.name).toList();
+          _biometricAuthEnabled = isEnabled;
+        });
+      }
+    } catch (e) {
+      debugPrint('[SettingsPage] Error loading biometric settings: $e');
+    }
+  }
+
+  Future<void> _toggleBiometricAuth(bool value) async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    try {
+      if (value) {
+        // 生体認証を有効化する前に、実際に認証できるか確認
+        final authService = BiometricAuthService.instance;
+        final authenticated = await authService.authenticate(
+          reason: l10n.enableBiometricPrompt,
+        );
+
+        if (!authenticated) {
+          // 認証失敗
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(l10n.authenticationFailed),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      // 設定を保存
+      await BiometricAuthService.instance.setBiometricAuthEnabled(value);
+      
+      if (mounted) {
+        setState(() {
+          _biometricAuthEnabled = value;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              value ? l10n.biometricEnabled : l10n.biometricDisabled,
+            ),
+            backgroundColor: value ? Colors.green : Colors.grey,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('[SettingsPage] Error toggling biometric auth: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('エラーが発生しました: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -106,7 +186,9 @@ class _SettingsPageState extends State<SettingsPage> {
       }
 
       // エクスポート実行
-      await DataExportService.shareFile();
+      await DataExportService.shareFile(
+        shareText: l10n.shareBackupFile,
+      );
 
       // ローディング閉じる
       if (context.mounted) {
@@ -181,10 +263,23 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (confirmed != true) return;
 
+      // iOSの場合、Documentsフォルダを初期ディレクトリに設定
+      String? initialDirectory;
+      if (!kIsWeb && Platform.isIOS) {
+        try {
+          final documentsDir = await getApplicationDocumentsDirectory();
+          initialDirectory = documentsDir.path;
+          debugPrint('[Import] 📂 初期ディレクトリ: $initialDirectory');
+        } catch (e) {
+          debugPrint('[Import] ⚠️ 初期ディレクトリ取得エラー: $e');
+        }
+      }
+
       // ファイル選択
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
+        initialDirectory: initialDirectory,
       );
 
       if (result == null) return;
@@ -326,11 +421,34 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () => _changeLanguage(context, const Locale('ja')),
           ),
           const Divider(thickness: 2),
+          // セキュリティセクション
+          ListTile(
+            leading: const Icon(Icons.security, color: Colors.blue),
+            title: Text(l10n.securitySettings),
+            subtitle: Text(l10n.securitySettingsDescription),
+          ),
+          SwitchListTile(
+            secondary: Icon(
+              _biometricAuthEnabled ? Icons.fingerprint : Icons.fingerprint_outlined,
+              color: _biometricAuthEnabled ? Colors.blue : Colors.grey,
+            ),
+            title: Text(l10n.biometricAuth),
+            subtitle: Text(
+              _biometricAvailable
+                  ? (_availableBiometrics.isNotEmpty
+                      ? l10n.biometricAvailable(_availableBiometrics.join(', '))
+                      : l10n.biometricNextStartup)
+                  : l10n.biometricNotAvailable,
+            ),
+            value: _biometricAuthEnabled,
+            onChanged: _biometricAvailable ? _toggleBiometricAuth : null,
+          ),
+          const Divider(thickness: 2),
           // データエクスポート/インポート
-          const ListTile(
-            leading: Icon(Icons.backup, color: Colors.blue),
-            title: Text('データバックアップ'),
-            subtitle: Text('データのエクスポート・インポート'),
+          ListTile(
+            leading: const Icon(Icons.backup, color: Colors.blue),
+            title: Text(l10n.dataBackup),
+            subtitle: Text(l10n.dataBackupDescription),
           ),
           ListTile(
             leading: const Icon(Icons.upload_file, color: Colors.green),
@@ -362,26 +480,28 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             },
           ),
-          // 通知デバッグ
-          ListTile(
-            leading: const Icon(Icons.bug_report, color: Colors.red),
-            title: const Text('通知デバッグ'),
-            subtitle: const Text('通知のテストと調査'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DebugNotificationPage(),
-                ),
-              );
-            },
-          ),
-          // バックグラウンドタスク設定は削除（3段階防御システムに移行）
-          // RepeatInterval.dailyがOS kernelレベルで永久ループを管理
-          
-          // Database Debug - デバッグモードでのみ表示
-          if (kDebugMode)
+          // デバッグ機能 - デバッグモードでのみ表示
+          if (kDebugMode) ...[
+            const Divider(thickness: 2),
+            const ListTile(
+              leading: Icon(Icons.developer_mode, color: Colors.purple),
+              title: Text('開発者ツール'),
+              subtitle: Text('デバッグ・テスト機能'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.bug_report, color: Colors.red),
+              title: const Text('通知デバッグ'),
+              subtitle: const Text('通知のテストと調査'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DebugNotificationPage(),
+                  ),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.storage, color: Colors.blue),
               title: Text(l10n.databaseDebug),
@@ -396,6 +516,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               },
             ),
+          ],
         ],
       ),
     );

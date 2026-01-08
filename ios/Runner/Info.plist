@@ -32,6 +32,8 @@
 	<true/>
 	<key>NSCalendarsUsageDescription</key>
 	<string>書類更新のリマインダーをカレンダーに追加するために、カレンダーへのアクセスが必要です。</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>アプリのロックを解除するために Face ID / Touch ID を使用します。</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

@@ -34,20 +34,36 @@
   - アラート期間内: 期限が近い順、アラート期間外: 本人→家族の順
   - **証件タイプ別アイコン表示**（在留カード/パスポート/免許証等）
   - フィルター機能（本人のみ/全員）、「本人」バッジ表示
+  - **操作仕様（2026年1月8日最終版）**: タップ→詳細ダイアログ、編集ボタン→編集画面（長押し機能削除）
 - [🟢] MemberSelectorDialog: メンバー選択ダイアログ（製品レベルUI実装完了）
   - 既存メンバーから選択、新規メンバー追加
   - グラデーションヘッダー、空状態デザイン
 - [🟢] DocumentRepository拡張: getAllWithMemberInfo()追加
+- [🟢] FamilyListPage: 操作仕様改善（2026年1月8日最終版）
+  - **タップ**: その家族の証件一覧画面に遷移
+  - **編集ボタン**: 編集画面に遷移（長押し機能削除）
+  - DocumentListPageのimport追加
+  - _navigateToDocumentList()メソッド追加
+  - **UI改善理由**: 長押しは隠れた機能で分かりにくいため、明示的なボタンのみに統一
 
-### 5. 生体認証によるアプリロック（Phase 3.6）
-- [❌] BiometricAuthService: 生体認証サービス実装
+### 5. 生体認証によるアプリロック（Phase 3.6） ✅ 完了
+- [🟢] BiometricAuthService: 生体認証サービス実装
   - デバイス対応確認
   - 認証実行（Face ID / Touch ID / 指紋認証）
-  - 認証状態管理
-- [❌] 設定画面に「生体認証でロック」トグル追加
-- [❌] アプリ起動時の認証チェック機能
-- [❌] バックグラウンド復帰時の再認証（5分経過後）
-- [❌] 認証失敗時の再試行機能（最大3回）
+  - 認証状態管理（SharedPreferences）
+- [🟢] BiometricGate: 認証ゲート画面実装
+  - アプリ起動時の認証チェック
+  - バックグラウンド復帰時の再認証（5分経過後）
+  - 認証待ち画面UI（グラデーション背景）
+- [🟢] 設定画面に「生体認証でロック」トグル追加
+  - デフォルト: 無効
+  - 有効化時に認証確認
+  - 利用可能な生体認証タイプ表示
+- [🟢] iOS Info.plist更新
+  - NSFaceIDUsageDescription追加
+- [🟢] 多言語対応（ja/en/zh）
+  - 16個の新しいl10nキー追加
+  - BiometricAuthService, BiometricGate, SettingsPage完全多言語化
 
 ## Phase 4: 更新ルールシステム（Week 3） ✅ 完了
 
@@ -208,6 +224,25 @@
   - 2行まで表示、それ以上は省略記号
   - 「その他」タイプの証件識別に有用
 
+### 4. カレンダー同期バグ修正（2026年1月8日） ✅
+- [🟢] 過去日スキップ機能
+  - リマインダー開始日が過去の場合、カレンダーダイアログを表示しない
+  - `_addToCalendarSilently()`に過去日チェック追加
+  - デバッグログで動作確認可能
+- [🟢] スピナー停止バグ修正
+  - カレンダー追加完了後、`setState(() => _isLoading = false);`を追加
+  - 保存ボタンのスピナーが正常に停止
+
+### 5. データエクスポート/インポート改善（2026年1月8日） ✅
+- [🟢] iOSファイル管理改善
+  - エクスポート時にDocumentsフォルダにも保存（Files appからアクセス可能）
+  - インポート時にDocumentsフォルダを初期ディレクトリに設定
+  - `path_provider`を使用してApplicationDocumentsDirectoryを取得
+- [🟢] 多言語対応
+  - `shareBackupFile`キーを3言語（ja/en/zh）に追加
+  - `shareFile()`メソッドに`shareText`パラメータ追加
+  - `ImportResult.toString()`を英語に統一（デバッグ用）
+
 ## Phase 7: 多言語統合（Week 6） ✅ 完了
 
 ### 1. ARBファイル更新 ✅
@@ -314,43 +349,18 @@
    - カレンダー同期動作確認
    - 通知アクションダイアログ動作確認
    - 有効期限最終警告通知テスト
-   - バックグラウンドタスク動作確認（24時間ごとの自動チェック）
-   - **データエクスポート/インポート動作確認**
+   - 生体認証機能テスト（Face ID / Touch ID）
+   - データエクスポート/インポート動作確認
    - 実機パフォーマンステスト
-2. **Phase 8.5.2（通知情報一覧）** - 🟡 中優先度
-   - 通知スケジュール確認UI
-   - 通知の手動キャンセル機能
-3. **Phase 8.2（リリース準備）**
+2. **Phase 8.2（リリース準備）** - 🟡 中優先度
    - アプリアイコン、スプラッシュ画面
    - ビルド設定最適化
-4. **Phase 8.8（自動テスト）** - 🟢 推奨
+3. **Phase 8.8（自動テスト）** - 🟢 推奨
    - Widget テスト（UI動作確認）
    - Unit テスト（ビジネスロジック）
    - Integration テスト（全体フロー）
-5. **Phase 3.6（生体認証）** - オプション機能
 
-### 🎯 現在の製品完成度
-- **実装完了**: Phase 1-7, Phase 8.5.1, Phase 8.5.3, Phase 8.7（基盤・UI・ポリシー・リマインダー・通知・カレンダー・多言語・データバックアップ・バックグラウンドタスク・通知キャンセル機能）
-- **製品評価**: 98/100点（データバックアップ機能により+3点）
-- **リリース可能性**: モバイル実機テスト完了後 → **即座に製品リリース可能**
-
-Phase 8.5.1の実装により、以下が実現されます：
-- 💾 全データをJSON形式でエクスポート（家族・証件・リマインダー状態）
-- 📲 iOS/Androidで他の端末にファイル共有
-- 📥 JSONファイルからデータをインポート（**既存データを完全上書き**）
-- 🔄 機種変更時のデータ移行が簡単
-- 🛡️ データ消失リスクの軽減
-- ⚠️ **上書き警告**で誤操作を防止
-
-Phase 3.5の実装により、以下が実現されます：
-- 📱 初期表示が証件一覧タブに変更
-- 🎯 証件更新が超高速化（2ステップで完了）
-- 👨‍👩‍👧‍👦 家族全員の証件を一画面で管理
-- ⚠️ 期限が近い証件が一目瞭然
-- ➕ 証件追加時に既存/新規メンバーを選択可能
-- 🎨 **証件タイプ別アイコンで視認性向上**（在留カード/パスポート/免許証等）
-
-Phase 3.6（生体認証）により、以下が追加されます：
+Phase 3.6（生体認証）により、以下が実現されました：
 - 🔒 **個人情報をしっかり保護**（Face ID / Touch ID / 指紋認証）
 - ⚡️ パスコード入力より高速で便利
 - 🛡️ 家族の証件情報を不正アクセスから守る
@@ -417,7 +427,12 @@ Phase 3.6（生体認証）により、以下が追加されます：
   - ✅ share_plus, file_picker統合
   - ✅ 多言語対応（**上書き警告メッセージ含む**）
   - ✅ macOSでの動作確認完了
-- Phase 8.5.2: ❌ **未着手**（通知情報一覧）
+- Phase 8.5.2: ✅ **完了**（通知情報一覧）
+  - ✅ NotificationListPage実装（既存実装の確認完了）
+  - ✅ 通知スケジュール一覧UI
+  - ✅ 通知の手動キャンセル機能
+  - ✅ 空状態表示
+  - ✅ 多言語対応（ja/en/zh）
 - Phase 8.1.1: ✅ **完了**（3段階防御通知システム）
   - ✅ workmanager削除（不安定なため削除）
   - ✅ BackgroundTaskService削除
@@ -436,8 +451,15 @@ Phase 3.6（生体認証）により、以下が追加されます：
   - ✅ 有効期限最終警告通知
   - ✅ macOS右クリックメニュー対応
   - ✅ 多言語対応（15個の新キー）
+- Phase 3.6: ✅ **完了**（生体認証）
+  - ✅ BiometricAuthService実装
+  - ✅ BiometricGate実装（アプリ起動時認証）
+  - ✅ 設定画面トグルスイッチ
+  - ✅ バックグラウンド復帰時再認証（5分経過後）
+  - ✅ iOS/macOS/Android対応
+  - ✅ 多言語対応（18個の新キー）
+  - ✅ macOSでの動作確認完了
 - Phase 8.8: ❌ **未着手**（自動テスト）
-- Phase 3.6: ❌ **未着手**（生体認証）
 
 ## Phase 8.1.1: 3段階防御通知システム（2026年1月8日） ✅ 完了
 
@@ -507,9 +529,70 @@ Phase 3.6（生体認証）により、以下が追加されます：
   - 警告メッセージで明確に通知
   - バックアップ推奨メッセージ表示
 
-### Phase 8.5.2: 通知情報一覧機能 ❌ 未実装
-- [❌] 通知スケジュール一覧UI
-- [❌] 通知の手動キャンセル機能
-- Phase 3.6: ❌ **未着手**（生体認証）
-  - ❌ BiometricAuthService実装
-  - ❌ アプリ起動時認証
+### Phase 8.5.2: 通知情報一覧機能 ✅ 完了
+- [🟢] NotificationListPage実装
+  - 予定通知一覧表示
+  - 通知情報カード（タイトル、本文、ID表示）
+  - 空状態デザイン
+- [🟢] 通知の手動キャンセル機能
+  - 個別削除ボタン（各通知カード）
+  - 一括削除ボタン（AppBar、delete_sweepアイコン）
+  - 確認ダイアログ（個別・一括両方）
+  - キャンセル成功/失敗メッセージ
+- [🟢] 多言語対応（13個の新キー）
+  - cancelNotification, cancelAllNotifications
+  - cancelNotificationConfirmation, cancelAllNotificationsConfirmation
+  - notificationCancelled, allNotificationsCancelled
+  - failedToCancelNotification
+  - noScheduledNotifications, noScheduledNotificationsDesc
+  - noTitle, refresh, notificationId, failedToLoadNotifications
+  - 日本語・英語・中国語対応完了
+- [🟢] macOSでの動作確認完了
+
+## Phase 3.6: 生体認証によるアプリロック（2026年1月8日） ✅ 完了
+
+### 1. local_authパッケージ統合 ✅
+- [🟢] pubspec.yamlにlocal_auth: ^2.1.8追加
+- [🟢] flutter pub get実行
+
+### 2. BiometricAuthService実装 ✅
+- [🟢] Singletonパターンで実装
+- [🟢] canCheckBiometrics(): 生体認証利用可能かチェック
+- [🟢] getAvailableBiometrics(): 利用可能な生体認証タイプを取得
+- [🟢] authenticate(reason): 生体認証を実行
+- [🟢] isBiometricAuthEnabled(): 設定状態を取得
+- [🟢] setBiometricAuthEnabled(enabled): 設定を保存（SharedPreferences）
+- [🟢] shouldAuthenticateOnStartup(): 起動時認証必要か判定
+
+### 3. BiometricGate実装 ✅
+- [🟢] 認証ゲート画面（認証成功後にアプリ表示）
+- [🟢] WidgetsBindingObserverでアプリライフサイクル監視
+- [🟢] バックグラウンド復帰時の再認証（5分経過後）
+- [🟢] グラデーション背景のUI
+- [🟢] 認証ボタン、ローディング表示
+
+### 4. 設定画面UI実装 ✅
+- [🟢] セキュリティセクション追加
+- [🟢] SwitchListTile（生体認証でロック）
+- [🟢] 利用可能な生体認証タイプ表示
+- [🟢] 有効化時に認証確認
+- [🟢] 成功/失敗メッセージ表示
+
+### 5. app.dart統合 ✅
+- [🟢] BiometricGateでMainNavigationPageをラップ
+- [🟢] 自動的に起動時認証チェック
+
+### 6. iOS/Android権限設定 ✅
+- [🟢] iOS Info.plist: NSFaceIDUsageDescription追加
+- [🟢] Android: 権限自動設定（local_authパッケージ）
+
+### 7. 多言語対応 ✅
+- [🟢] 16個の新しいl10nキー追加
+  - securitySettings, securitySettingsDescription
+  - biometricAuth, biometricAvailable, biometricNextStartup
+  - biometricNotAvailable, biometricEnabled, biometricDisabled
+  - authenticationFailed, biometricRequired
+  - biometricRequiredDescription, authenticate
+  - unlockApp, enableBiometricPrompt
+- [🟢] 日本語・英語・中国語対応完了
+- [🟢] BiometricAuthService, BiometricGate, SettingsPage完全多言語化

@@ -93,6 +93,59 @@ class _NotificationListPageState extends State<NotificationListPage> {
     }
   }
 
+  Future<void> _cancelAllNotifications() async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.warning, color: Colors.orange),
+            const SizedBox(width: 12),
+            Text(l10n.cancelAllNotifications),
+          ],
+        ),
+        content: Text(l10n.cancelAllNotificationsConfirmation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await NotificationService.instance.cancelAllNotifications();
+        await _loadNotifications();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(l10n.allNotificationsCancelled),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          final l10n = AppLocalizations.of(context)!;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${l10n.failedToCancelNotification}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -100,6 +153,12 @@ class _NotificationListPageState extends State<NotificationListPage> {
       appBar: AppBar(
         title: Text(l10n.notificationList),
         actions: [
+          if (_pendingNotifications.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              onPressed: _cancelAllNotifications,
+              tooltip: l10n.cancelAllNotifications,
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadNotifications,

@@ -181,6 +181,9 @@
   "noScheduledNotifications": "予定されている通知はありません",
   "noScheduledNotificationsDesc": "証件を追加すると、期限前に通知が設定されます",
   "cancelNotification": "通知をキャンセル",
+  "cancelAllNotifications": "全てキャンセル",
+  "cancelAllNotificationsConfirmation": "全ての通知をキャンセルしますか？この操作は取り消せません。",
+  "allNotificationsCancelled": "全ての通知をキャンセルしました",
   "cancelNotificationConfirmation": "この通知をキャンセルしますか？",
   "notificationCancelled": "通知をキャンセルしました",
   "notificationId": "通知ID",
@@ -226,6 +229,7 @@
   "exportDataDescription": "全データをJSONファイルにバックアップ",
   "exportDataConfirm": "全てのデータをエクスポートしますか？",
   "export": "エクスポート",
+  "shareBackupFile": "バックアップファイルを共有します",
   "exportSuccess": "エクスポートが完了しました",
   "exportFailed": "エクスポートに失敗しました",
   "importData": "データインポート",
@@ -233,5 +237,28 @@
   "importDataWarning": "警告：インポートすると、既存の全データが削除されます。バックアップがあることを確認してください。",
   "import": "インポート",
   "importSuccess": "インポート完了: {memberCount}人, {documentCount}件",
-  "importFailed": "インポートに失敗しました"
+  "importFailed": "インポートに失敗しました",
+  "securitySettings": "セキュリティ",
+  "securitySettingsDescription": "生体認証とプライバシー設定",
+  "biometricAuth": "生体認証でロック",
+  "@biometricAvailable": {
+    "placeholders": {
+      "types": {
+        "type": "String"
+      }
+    }
+  },
+  "biometricAvailable": "利用可能: {types}",
+  "biometricNextStartup": "次回起動時から生体認証が必要になります",
+  "biometricNotAvailable": "生体認証が利用できません",
+  "biometricEnabled": "生体認証が有効になりました",
+  "biometricDisabled": "生体認証が無効になりました",
+  "authenticationFailed": "認証に失敗しました",
+  "biometricRequired": "生体認証が必要です",
+  "biometricRequiredDescription": "アプリを使用するには認証してください",
+  "authenticate": "認証する",
+  "unlockApp": "アプリを使用するには認証が必要です",
+  "enableBiometricPrompt": "生体認証を有効にするために認証してください",
+  "dataBackup": "データバックアップ",
+  "dataBackupDescription": "データのエクスポート・インポート"
 }

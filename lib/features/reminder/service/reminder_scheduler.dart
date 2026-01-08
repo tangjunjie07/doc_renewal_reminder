@@ -133,7 +133,11 @@ class ReminderScheduler {
       print('[ReminderScheduler] Document ${document.id}: reminderStart=$reminderStartDate, highRisk=$highRiskDate, expiry=${document.expiryDate}');
 
       // 第一防衛線: 遠期唤醒（リマインダー開始日の単発通知）
-      if (reminderStartDate.isAfter(now)) {
+      final reminderStartDateOnly = DateTime(reminderStartDate.year, reminderStartDate.month, reminderStartDate.day);
+      final todayOnly = DateTime(now.year, now.month, now.day);
+      
+      if (reminderStartDateOnly.isAfter(todayOnly)) {
+        // 未来の日付 → スケジュール
         await _notificationService.scheduleNotification(
           id: document.id! * 1000 + 0,
           title: title,
@@ -148,15 +152,17 @@ class ReminderScheduler {
           payload: payload,
         );
         print('[ReminderScheduler]   第一防衛線: ${reminderStartDate.toIso8601String()}');
-      } else {
-        // 過去の日付 → すぐに通知（アプリ起動時に見逃した場合）
-        await _notificationService.showNotification(
+      } else if (reminderStartDateOnly.isAtSameMomentAs(todayOnly) || reminderStartDateOnly.isBefore(todayOnly)) {
+        // 今日または過去 → 10秒後に通知（バックグラウンドで確実に表示）
+        final scheduledTime = now.add(const Duration(seconds: 10));
+        await _notificationService.scheduleNotification(
           id: document.id! * 1000 + 0,
           title: title,
           body: body,
+          scheduledDate: scheduledTime,
           payload: payload,
         );
-        print('[ReminderScheduler]   第一防衛線: 即座に送信（過去日付）');
+        print('[ReminderScheduler]   第一防衛線: 10秒後に送信（${reminderStartDateOnly.isBefore(todayOnly) ? '過去日付' : '今日が開始日'}）');
       }
 
       // 第二防衛線: 近期催办（高危期から毎日ループ）★核心★

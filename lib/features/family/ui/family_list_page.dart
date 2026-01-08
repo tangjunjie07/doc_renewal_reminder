@@ -5,6 +5,7 @@ import '../repository/family_repository.dart';
 import '../model/family_member.dart';
 import 'family_edit_page.dart';
 import '../../documents/repository/document_repository.dart';
+import '../../documents/ui/document_list_page.dart';
 import '../../../core/localization/app_localizations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -101,6 +102,15 @@ class _FamilyListPageState extends State<FamilyListPage>
       _animationController.reset();
       await _loadMembers();
     }
+  }
+
+  void _navigateToDocumentList(FamilyMember member) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentListPage(member: member),
+      ),
+    ).then((_) => _loadMembers());
   }
 
   Future<void> _deleteAllDocuments(FamilyMember member) async {
@@ -468,7 +478,7 @@ class _FamilyListPageState extends State<FamilyListPage>
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        onTap: () => _navigateToEdit(member),
+        onTap: () => _navigateToDocumentList(member),
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(

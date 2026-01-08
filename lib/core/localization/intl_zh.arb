@@ -181,6 +181,9 @@
   "noScheduledNotifications": "没有已计划的通知",
   "noScheduledNotificationsDesc": "添加证件后，将设置期限前通知",
   "cancelNotification": "取消通知",
+  "cancelAllNotifications": "全部取消",
+  "cancelAllNotificationsConfirmation": "确定要取消所有通知吗？此操作无法撤销。",
+  "allNotificationsCancelled": "已取消所有通知",
   "cancelNotificationConfirmation": "确定要取消此通知吗？",
   "notificationCancelled": "通知已取消",
   "notificationId": "通知ID",
@@ -225,13 +228,35 @@
   "exportData": "导出数据",
   "exportDataDescription": "备份所有数据到JSON文件",
   "exportDataConfirm": "是否导出所有数据？",
-  "export": "导出",
-  "exportSuccess": "导出成功",
+  "export": "导出",  "shareBackupFile": "共享备份文件",  "exportSuccess": "导出成功",
   "exportFailed": "导出失败",
   "importData": "导入数据",
   "importDataDescription": "从json文件恢复数据",
   "importDataWarning": "警告：导入将删除所有现有数据。请确保已备份。",
   "import": "导入",
   "importSuccess": "导入完成：{memberCount}人，{documentCount}件证件",
-  "importFailed": "导入失败"
+  "importFailed": "导入失败",
+  "securitySettings": "安全设置",
+  "securitySettingsDescription": "生物识别认证和隐私设置",
+  "biometricAuth": "使用生物识别锁定",
+  "@biometricAvailable": {
+    "placeholders": {
+      "types": {
+        "type": "String"
+      }
+    }
+  },
+  "biometricAvailable": "可用: {types}",
+  "biometricNextStartup": "下次启动时将需要生物识别认证",
+  "biometricNotAvailable": "生物识别认证不可用",
+  "biometricEnabled": "生物识别认证已启用",
+  "biometricDisabled": "生物识别认证已禁用",
+  "authenticationFailed": "认证失败",
+  "biometricRequired": "需要生物识别认证",
+  "biometricRequiredDescription": "请进行认证以使用应用",
+  "authenticate": "认证",
+  "unlockApp": "使用应用需要认证",
+  "enableBiometricPrompt": "请进行认证以启用生物识别",
+  "dataBackup": "数据备份",
+  "dataBackupDescription": "导出和导入数据"
 }

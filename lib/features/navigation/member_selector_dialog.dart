@@ -45,15 +45,21 @@ class _MemberSelectorDialogState extends State<MemberSelectorDialog> {
   }
 
   Future<void> _addNewMember() async {
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
         builder: (context) => const FamilyEditPage(),
       ),
     );
     
-    if (result == true) {
-      await _loadMembers();
+    if (result != null) {
+      // 通常の保存（result == true）の場合はメンバーリストを更新
+      if (result == true) {
+        await _loadMembers();
+      } else if (result is int && mounted) {
+        // 保存して証券追加の場合、メンバーIDを返してダイアログを閉じる
+        Navigator.pop(context, result);
+      }
     }
   }
 

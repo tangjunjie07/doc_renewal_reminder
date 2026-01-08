@@ -140,35 +140,10 @@ class _FamilyEditPageState extends State<FamilyEditPage>
 
       if (mounted) {
         if (addDocument && memberId != null) {
-          // 証件追加画面に遷移
+          // 証件追加画面に遷移するため、メンバーIDを返してダイアログを閉じる
+          // DocumentEditPageは呼び出し元（document_all_list_page）で開く
           setState(() => _isSaving = false);
-          Navigator.pop(context, true);
-          // 証件追加画面を開く
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DocumentEditPage(memberId: memberId!),
-            ),
-          );
-          // 証件追加後は終了
-          if (result == true && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    const Icon(Icons.check_circle_outline, color: Colors.white),
-                    const SizedBox(width: 12),
-                    Text(l10n.documentAdded),
-                  ],
-                ),
-                backgroundColor: Colors.green.shade700,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
-          }
+          Navigator.pop(context, memberId);
         } else {
           Navigator.pop(context, true);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -398,16 +373,17 @@ class _FamilyEditPageState extends State<FamilyEditPage>
                         )
                       : const Icon(Icons.check),
                   label: Text(_isSaving ? l10n.saving : l10n.save),
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
                   elevation: 4,
                 ),
                 const SizedBox(width: 16),
                 FloatingActionButton.extended(
                   heroTag: 'family_edit_save_add_fab',
                   onPressed: _isSaving ? null : () => _save(addDocument: true),
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.post_add),
                   label: Text(l10n.saveAndAddDocument),
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  elevation: 4,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  elevation: 6,
                 ),
               ],
             ),

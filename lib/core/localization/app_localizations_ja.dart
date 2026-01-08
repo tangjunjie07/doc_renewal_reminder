@@ -493,6 +493,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cancelNotification => '通知をキャンセル';
 
   @override
+  String get cancelAllNotifications => '全てキャンセル';
+
+  @override
+  String get cancelAllNotificationsConfirmation =>
+      '全ての通知をキャンセルしますか？この操作は取り消せません。';
+
+  @override
+  String get allNotificationsCancelled => '全ての通知をキャンセルしました';
+
+  @override
   String get cancelNotificationConfirmation => 'この通知をキャンセルしますか？';
 
   @override
@@ -625,6 +635,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get export => 'エクスポート';
 
   @override
+  String get shareBackupFile => 'バックアップファイルを共有します';
+
+  @override
   String get exportSuccess => 'エクスポートが完了しました';
 
   @override
@@ -650,4 +663,54 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get importFailed => 'インポートに失敗しました';
+
+  @override
+  String get securitySettings => 'セキュリティ';
+
+  @override
+  String get securitySettingsDescription => '生体認証とプライバシー設定';
+
+  @override
+  String get biometricAuth => '生体認証でロック';
+
+  @override
+  String biometricAvailable(String types) {
+    return '利用可能: $types';
+  }
+
+  @override
+  String get biometricNextStartup => '次回起動時から生体認証が必要になります';
+
+  @override
+  String get biometricNotAvailable => '生体認証が利用できません';
+
+  @override
+  String get biometricEnabled => '生体認証が有効になりました';
+
+  @override
+  String get biometricDisabled => '生体認証が無効になりました';
+
+  @override
+  String get authenticationFailed => '認証に失敗しました';
+
+  @override
+  String get biometricRequired => '生体認証が必要です';
+
+  @override
+  String get biometricRequiredDescription => 'アプリを使用するには認証してください';
+
+  @override
+  String get authenticate => '認証する';
+
+  @override
+  String get unlockApp => 'アプリを使用するには認証が必要です';
+
+  @override
+  String get enableBiometricPrompt => '生体認証を有効にするために認証してください';
+
+  @override
+  String get dataBackup => 'データバックアップ';
+
+  @override
+  String get dataBackupDescription => 'データのエクスポート・インポート';
 }

@@ -6,6 +6,7 @@ import '../../../core/localization/app_localizations.dart';
 import '../model/document.dart';
 import '../repository/document_repository.dart';
 import '../../renewal_policy/data/default_policies.dart';
+import '../../reminder/service/reminder_scheduler.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:add_2_calendar/add_2_calendar.dart';
 
@@ -28,6 +29,7 @@ class DocumentEditPage extends StatefulWidget {
 class _DocumentEditPageState extends State<DocumentEditPage>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
   late TextEditingController _numberController;
   late TextEditingController _notesController;
   
@@ -91,6 +93,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _numberController.dispose();
     _notesController.dispose();
     _animationController.dispose();
@@ -175,6 +178,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
   }
 
   // 保存時にサイレントにカレンダーに追加（エラーメッセージは表示しない）
+  // 過去日の場合はダイアログを表示せずにスキップ
   Future<void> _addToCalendarSilently() async {
     if (_expiryDate == null) return;
 
@@ -184,6 +188,12 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       
       final reminderDays = _customReminderDays ?? _getDefaultReminderDays(_selectedType);
       final reminderStartDate = _expiryDate!.subtract(Duration(days: reminderDays));
+      
+      // 過去日の場合はカレンダーに追加しない（ダイアログを表示しない）
+      if (reminderStartDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
+        debugPrint('Reminder start date is in the past, skipping calendar sync');
+        return;
+      }
       
       final Event event = Event(
         title: '$documentTypeLabel ${l10n.reminderStartDate}',
@@ -272,14 +282,31 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         await DocumentRepository.update(document);
       }
 
-      // カレンダー自動同期が有効な場合、カレンダーに追加
-      if (_syncToCalendar && mounted) {
-        await _addToCalendarSilently();
+      // 通知をスケジュール（新規追加・編集の両方で実行）
+      try {
+        final scheduler = ReminderScheduler();
+        
+        // 効率化：全体ではなく、このドキュメントだけを更新
+        // （scheduleAll()は内部でcancelAllNotifications()を呼ぶため全件再スケジュール）
+        await scheduler.scheduleAll();
+        
+        debugPrint('[DocumentEdit] ✅ 通知スケジュール完了');
+      } catch (e) {
+        debugPrint('[DocumentEdit] ⚠️ 通知スケジュールエラー: $e');
+        // エラーが発生してもカード保存自体は成功しているので続行
       }
+
+      // ローディングを解除
+      setState(() => _isLoading = false);
 
       if (mounted) {
         if (addAnother) {
-          // フォームをリセットして次の追加に備える
+          // カレンダー同期用にリセット前の値を保存
+          final shouldSyncToCalendar = _syncToCalendar;
+          final savedExpiryDate = _expiryDate;
+          final savedType = _selectedType;
+          
+          // フォームをリセット
           setState(() {
             _isLoading = false;
             _selectedType = 'residence_card';
@@ -291,6 +318,42 @@ class _DocumentEditPageState extends State<DocumentEditPage>
             _notesController.clear();
           });
           
+          // スクロール位置を先頭に戻す（カレンダー同期前に実行）
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+          
+          // カレンダー自動同期（過去日チェック）- 先に実行してダイアログを表示
+          if (shouldSyncToCalendar && savedExpiryDate != null) {
+            final reminderDays = _getDefaultReminderDays(savedType);
+            final expiryDate = savedExpiryDate;
+            final reminderStartDate = expiryDate.subtract(Duration(days: reminderDays));
+            
+            if (!reminderStartDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
+              try {
+                final l10n = AppLocalizations.of(context)!;
+                final documentTypeLabel = _getDocumentTypeLabel(savedType);
+                
+                final Event event = Event(
+                  title: '$documentTypeLabel ${l10n.reminderStartDate}',
+                  description: '${l10n.expiryDate}: ${DateFormat('yyyy/MM/dd').format(expiryDate)}\n'
+                      '${l10n.reminderStartDate}: ${DateFormat('yyyy/MM/dd').format(reminderStartDate)}',
+                    location: '',
+                    startDate: reminderStartDate,
+                    endDate: reminderStartDate.add(const Duration(hours: 1)),
+                    allDay: true,
+                  );
+
+                  await Add2Calendar.addEvent2Cal(event);
+                } catch (e) {
+                  debugPrint('Failed to add to calendar: $e');
+                }
+              }
+            }
+          
+          // カレンダーダイアログが閉じた後に「保存しました」メッセージを表示
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -308,8 +371,29 @@ class _DocumentEditPageState extends State<DocumentEditPage>
               ),
             ),
           );
+          // 「次を追加」後は通常の処理（ページに留まる）
         } else {
-          Navigator.pop(context, true);
+          // カレンダー同期データを準備
+          Map<String, dynamic>? calendarData;
+          if (_syncToCalendar) {
+            final reminderDays = _customReminderDays ?? _getDefaultReminderDays(_selectedType);
+            final reminderStartDate = _expiryDate!.subtract(Duration(days: reminderDays));
+            
+            // 過去日でない場合のみカレンダーデータを返す
+            if (!reminderStartDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
+              calendarData = {
+                'documentType': _selectedType,
+                'expiryDate': _expiryDate,
+                'reminderStartDate': reminderStartDate,
+                'documentNumber': _numberController.text.trim(),
+                'notes': _notesController.text.trim(),
+              };
+            }
+          }
+          
+          // 一覧画面に戻る（カレンダーデータも返す）
+          Navigator.pop(context, calendarData ?? true);
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -363,6 +447,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           // Gradient AppBar
           SliverAppBar(
@@ -391,7 +476,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
             ),
             leading: IconButton(
               icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context, true), // 常にリフレッシュ
             ),
           ),
 
@@ -622,9 +707,10 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                         SizedBox(
                           width: double.infinity,
                           height: 56,
-                          child: FilledButton.tonal(
+                          child: FilledButton(
                             onPressed: _isLoading ? null : () => _save(addAnother: true),
                             style: FilledButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -632,7 +718,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.add_circle_outline),
+                                const Icon(Icons.post_add),
                                 const SizedBox(width: 8),
                                 Text(
                                   l10n.saveAndAddAnother,

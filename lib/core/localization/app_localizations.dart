@@ -983,6 +983,24 @@ abstract class AppLocalizations {
   /// **'Cancel Notification'**
   String get cancelNotification;
 
+  /// No description provided for @cancelAllNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel All'**
+  String get cancelAllNotifications;
+
+  /// No description provided for @cancelAllNotificationsConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel all notifications? This action cannot be undone.'**
+  String get cancelAllNotificationsConfirmation;
+
+  /// No description provided for @allNotificationsCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'All notifications cancelled'**
+  String get allNotificationsCancelled;
+
   /// No description provided for @cancelNotificationConfirmation.
   ///
   /// In en, this message translates to:
@@ -1247,6 +1265,12 @@ abstract class AppLocalizations {
   /// **'Export'**
   String get export;
 
+  /// No description provided for @shareBackupFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Share backup file'**
+  String get shareBackupFile;
+
   /// No description provided for @exportSuccess.
   ///
   /// In en, this message translates to:
@@ -1294,6 +1318,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import failed'**
   String get importFailed;
+
+  /// No description provided for @securitySettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get securitySettings;
+
+  /// No description provided for @securitySettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication and privacy settings'**
+  String get securitySettingsDescription;
+
+  /// No description provided for @biometricAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock with Biometrics'**
+  String get biometricAuth;
+
+  /// No description provided for @biometricAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available: {types}'**
+  String biometricAvailable(String types);
+
+  /// No description provided for @biometricNextStartup.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication will be required on next startup'**
+  String get biometricNextStartup;
+
+  /// No description provided for @biometricNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication is not available'**
+  String get biometricNotAvailable;
+
+  /// No description provided for @biometricEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication enabled'**
+  String get biometricEnabled;
+
+  /// No description provided for @biometricDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric authentication disabled'**
+  String get biometricDisabled;
+
+  /// No description provided for @authenticationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed'**
+  String get authenticationFailed;
+
+  /// No description provided for @biometricRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Biometric Authentication Required'**
+  String get biometricRequired;
+
+  /// No description provided for @biometricRequiredDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Please authenticate to use the app'**
+  String get biometricRequiredDescription;
+
+  /// No description provided for @authenticate.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate'**
+  String get authenticate;
+
+  /// No description provided for @unlockApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication required to use the app'**
+  String get unlockApp;
+
+  /// No description provided for @enableBiometricPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Please authenticate to enable biometric authentication'**
+  String get enableBiometricPrompt;
+
+  /// No description provided for @dataBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Backup'**
+  String get dataBackup;
+
+  /// No description provided for @dataBackupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Export and import data'**
+  String get dataBackupDescription;
 }
 
 class _AppLocalizationsDelegate

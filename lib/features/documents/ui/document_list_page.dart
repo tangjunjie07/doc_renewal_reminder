@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
 import '../../../core/database/db_provider.dart';
 import '../../../core/database/hive_provider.dart';
 import '../../../core/localization/app_localizations.dart';
@@ -87,7 +89,7 @@ class _DocumentListPageState extends State<DocumentListPage>
   }
 
   Future<void> _navigateToEdit([Document? document]) async {
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
         builder: (context) => DocumentEditPage(
@@ -96,9 +98,43 @@ class _DocumentListPageState extends State<DocumentListPage>
         ),
       ),
     );
-    if (result == true) {
+    
+    if (result != null) {
+      // 一覧をリフレッシュ
       _animationController.reset();
       await _loadDocuments();
+      
+      // カレンダーデータが返されている場合、カレンダーに追加
+      if (result is Map<String, dynamic> && mounted) {
+        await _addToCalendar(result);
+      }
+    }
+  }
+  
+  Future<void> _addToCalendar(Map<String, dynamic> data) async {
+    try {
+      final l10n = AppLocalizations.of(context)!;
+      final documentTypeLabel = _getDocumentTypeLabel(data['documentType'] as String);
+      final expiryDate = data['expiryDate'] as DateTime;
+      final reminderStartDate = data['reminderStartDate'] as DateTime;
+      final documentNumber = data['documentNumber'] as String;
+      final notes = data['notes'] as String;
+      
+      final Event event = Event(
+        title: '$documentTypeLabel ${l10n.reminderStartDate}',
+        description: '${l10n.expiryDate}: ${DateFormat('yyyy/MM/dd').format(expiryDate)}\n'
+            '${l10n.reminderStartDate}: ${DateFormat('yyyy/MM/dd').format(reminderStartDate)}\n'
+            '${documentNumber.isNotEmpty ? '${l10n.documentNumber}: $documentNumber\n' : ''}'
+            '${notes.isNotEmpty ? '${l10n.notes}: $notes' : ''}',
+        location: '',
+        startDate: reminderStartDate,
+        endDate: reminderStartDate.add(const Duration(hours: 1)),
+        allDay: true,
+      );
+
+      await Add2Calendar.addEvent2Cal(event);
+    } catch (e) {
+      debugPrint('Failed to add to calendar: $e');
     }
   }
 
@@ -213,7 +249,7 @@ class _DocumentListPageState extends State<DocumentListPage>
     if (confirmed == true) {
       try {
         final l10n = AppLocalizations.of(context)!;
-        await FamilyRepository.delete(document.id!);
+        await DocumentRepository.delete(document.id!);
         _animationController.reset();
         await _loadDocuments();
         if (mounted) {
@@ -423,6 +459,7 @@ class _DocumentListPageState extends State<DocumentListPage>
   }
 
   Widget _buildDocumentCard(Document document) {
+    final l10n = AppLocalizations.of(context)!;
     final daysUntilExpiry = document.expiryDate.difference(DateTime.now()).inDays;
     final isExpiringSoon = daysUntilExpiry <= 90;
     final isExpired = daysUntilExpiry < 0;
@@ -441,7 +478,6 @@ class _DocumentListPageState extends State<DocumentListPage>
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () => _showDocumentActionDialog(document),
-        onLongPress: () => _navigateToEdit(document), // iOS/Android: 長押しで編集
         onSecondaryTap: () => _showContextMenu(context, document), // macOS: 右クリックでメニュー
         child: Padding(
           padding: const EdgeInsets.all(18),
@@ -546,6 +582,37 @@ class _DocumentListPageState extends State<DocumentListPage>
                         ],
                       ],
                     ),
+                  ),
+                  // アクションボタン
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.edit_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        onPressed: () => _navigateToEdit(document),
+                        tooltip: l10n.edit,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        color: Colors.red.shade700,
+                        onPressed: () => _deleteDocument(document),
+                        tooltip: l10n.delete,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              Colors.red.shade50.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

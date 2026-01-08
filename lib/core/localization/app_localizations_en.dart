@@ -508,6 +508,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancelNotification => 'Cancel Notification';
 
   @override
+  String get cancelAllNotifications => 'Cancel All';
+
+  @override
+  String get cancelAllNotificationsConfirmation =>
+      'Cancel all notifications? This action cannot be undone.';
+
+  @override
+  String get allNotificationsCancelled => 'All notifications cancelled';
+
+  @override
   String get cancelNotificationConfirmation => 'Cancel this notification?';
 
   @override
@@ -643,6 +653,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get export => 'Export';
 
   @override
+  String get shareBackupFile => 'Share backup file';
+
+  @override
   String get exportSuccess => 'Export completed successfully';
 
   @override
@@ -668,4 +681,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importFailed => 'Import failed';
+
+  @override
+  String get securitySettings => 'Security';
+
+  @override
+  String get securitySettingsDescription =>
+      'Biometric authentication and privacy settings';
+
+  @override
+  String get biometricAuth => 'Lock with Biometrics';
+
+  @override
+  String biometricAvailable(String types) {
+    return 'Available: $types';
+  }
+
+  @override
+  String get biometricNextStartup =>
+      'Biometric authentication will be required on next startup';
+
+  @override
+  String get biometricNotAvailable =>
+      'Biometric authentication is not available';
+
+  @override
+  String get biometricEnabled => 'Biometric authentication enabled';
+
+  @override
+  String get biometricDisabled => 'Biometric authentication disabled';
+
+  @override
+  String get authenticationFailed => 'Authentication failed';
+
+  @override
+  String get biometricRequired => 'Biometric Authentication Required';
+
+  @override
+  String get biometricRequiredDescription =>
+      'Please authenticate to use the app';
+
+  @override
+  String get authenticate => 'Authenticate';
+
+  @override
+  String get unlockApp => 'Authentication required to use the app';
+
+  @override
+  String get enableBiometricPrompt =>
+      'Please authenticate to enable biometric authentication';
+
+  @override
+  String get dataBackup => 'Data Backup';
+
+  @override
+  String get dataBackupDescription => 'Export and import data';
 }

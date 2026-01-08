@@ -40,19 +40,32 @@ class DataExportService {
   }
 
   /// JSONファイルを作成してパスを返す
+  /// iOSではDocumentsフォルダにも保存（インポート時に見つけやすくする）
   static Future<File> createExportFile() async {
     try {
       final exportData = await exportToJson();
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
 
-      // 一時ディレクトリにファイル作成
-      final directory = await getTemporaryDirectory();
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
       final fileName = 'doc_reminder_backup_$timestamp.json';
-      final file = File('${directory.path}/$fileName');
 
+      // iOSの場合、Documentsフォルダにも保存（Files appからアクセス可能）
+      if (!kIsWeb && Platform.isIOS) {
+        try {
+          final documentsDir = await getApplicationDocumentsDirectory();
+          final documentsFile = File('${documentsDir.path}/$fileName');
+          await documentsFile.writeAsString(jsonString);
+          debugPrint('[DataExport] 📄 Documentsフォルダに保存: ${documentsFile.path}');
+        } catch (e) {
+          debugPrint('[DataExport] ⚠️ Documents保存エラー（継続）: $e');
+        }
+      }
+
+      // 共有用に一時ファイルも作成
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/$fileName');
       await file.writeAsString(jsonString);
-      debugPrint('[DataExport] 📄 ファイル作成: ${file.path}');
+      debugPrint('[DataExport] 📄 一時ファイル作成: ${file.path}');
 
       return file;
     } catch (e) {
@@ -62,7 +75,7 @@ class DataExportService {
   }
 
   /// ファイル共有（iOS/Android）
-  static Future<void> shareFile() async {
+  static Future<void> shareFile({String? shareText}) async {
     try {
       debugPrint('[DataExport] 📲 ファイル共有開始');
 
@@ -70,7 +83,7 @@ class DataExportService {
       final result = await Share.shareXFiles(
         [XFile(file.path)],
         subject: 'Document Renewal Reminder Backup',
-        text: 'バックアップファイルを共有します',
+        text: shareText,
       );
 
       if (result.status == ShareResultStatus.success) {
@@ -309,9 +322,9 @@ class ImportResult {
   @override
   String toString() {
     if (success) {
-      return 'インポート成功: $memberCount人, $documentCount件, $reminderStateCount状態';
+      return 'Import successful: $memberCount members, $documentCount documents, $reminderStateCount states';
     } else {
-      return 'インポート失敗: $error';
+      return 'Import failed: $error';
     }
   }
 }
