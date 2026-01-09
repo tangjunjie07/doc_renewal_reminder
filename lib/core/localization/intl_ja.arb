@@ -273,5 +273,12 @@
   "unlockApp": "アプリを使用するには認証が必要です",
   "enableBiometricPrompt": "生体認証を有効にするために認証してください",
   "dataBackup": "データバックアップ",
-  "dataBackupDescription": "データのエクスポート・インポート"
+  "dataBackupDescription": "データのエクスポート・インポート",
+  "supportTitle": "お問い合わせ・ご意見",
+  "supportDescription": "ご意見・ご要望は下記からご連絡ください。",
+  "supportDialogContent": "ご意見・ご要望はGitHubまたはメールでお送りいただけます。内容は必ず開発者に届きます。",
+  "githubButton": "GitHubでフィードバック",
+  "mailButton": "メールで問い合わせ",
+  "supportMailSubject": "【アプリ問い合わせ】",
+  "supportMailBody": "ご意見・ご要望内容を記入してください。"
 }

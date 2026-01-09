@@ -754,4 +754,26 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get dataBackupDescription => 'データのエクスポート・インポート';
+
+  @override
+  String get supportTitle => 'お問い合わせ・ご意見';
+
+  @override
+  String get supportDescription => 'ご意見・ご要望は下記からご連絡ください。';
+
+  @override
+  String get supportDialogContent =>
+      'ご意見・ご要望はGitHubまたはメールでお送りいただけます。内容は必ず開発者に届きます。';
+
+  @override
+  String get githubButton => 'GitHubでフィードバック';
+
+  @override
+  String get mailButton => 'メールで問い合わせ';
+
+  @override
+  String get supportMailSubject => '【アプリ問い合わせ】';
+
+  @override
+  String get supportMailBody => 'ご意見・ご要望内容を記入してください。';
 }

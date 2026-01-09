@@ -271,5 +271,12 @@
   "unlockApp": "使用应用需要认证",
   "enableBiometricPrompt": "请进行认证以启用生物识别",
   "dataBackup": "数据备份",
-  "dataBackupDescription": "导出和导入数据"
-}
+  "dataBackupDescription": "导出和导入数据",
+  "supportTitle": "支持与反馈",
+  "supportDescription": "如有意见或建议，请通过以下方式联系我们。",
+  "supportDialogContent": "您可以通过GitHub或邮件发送反馈，所有内容都会送达开发者。",
+  "githubButton": "通过GitHub反馈",
+  "mailButton": "邮件联系",
+  "supportMailSubject": "【应用咨询】",
+  "supportMailBody": "请填写您的意见或需求。"
+  }

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+
 import '../../family/model/family_member.dart';
 import '../../family/repository/family_repository.dart';
 import '../../documents/model/document.dart';
@@ -77,26 +77,11 @@ class DataExportService {
   }
 
   /// ファイル共有（iOS/Android）
-  static Future<void> shareFile({String? shareText}) async {
-    try {
-      AppLogger.log('[DataExport] 📲 ファイル共有開始');
-
-      final file = await createExportFile();
-      final result = await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'Document Renewal Reminder Backup',
-        text: shareText,
-      );
-
-      if (result.status == ShareResultStatus.success) {
-        AppLogger.log('[DataExport] ✅ 共有成功');
-      } else {
-        AppLogger.log('[DataExport] ⚠️ 共有キャンセル: ${result.status}');
-      }
-    } catch (e) {
-      AppLogger.error('[DataExport] ❌ 共有エラー: $e');
-      rethrow;
-    }
+  ///
+  /// [sharePositionOrigin] はiOS/Androidのみ必須。macOS/webでは不要。
+  /// エクスポート用ファイルを生成して返す（UI層で共有処理を行う設計に変更）
+  static Future<File> createAndGetExportFile() async {
+    return await createExportFile();
   }
 
   /// JSONファイルからインポート

@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/localization/notification_localizations.dart';
@@ -148,7 +150,6 @@ class _SettingsPageState extends State<SettingsPage> {
   // データエクスポート
   Future<void> _exportData(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
-    
     try {
       // 確認ダイアログ
       final confirmed = await showDialog<bool>(
@@ -191,9 +192,38 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
       // エクスポート実行
-      await DataExportService.shareFile(
-        shareText: l10n.shareBackupFile,
-      );
+      final file = await DataExportService.createAndGetExportFile();
+      if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+        // ボタン位置を取得
+        final box = context.findRenderObject() is RenderBox
+            ? context.findRenderObject() as RenderBox
+            : null;
+        Rect rect;
+        if (box != null) {
+          final offset = box.localToGlobal(Offset.zero);
+          rect = offset & box.size;
+        } else {
+          // fallback: 画面中央
+          final size = MediaQuery.of(context).size;
+          rect = Rect.fromCenter(
+            center: Offset(size.width / 2, size.height / 2),
+            width: 200,
+            height: 200,
+          );
+        }
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          subject: 'Document Renewal Reminder Backup',
+          text: l10n.shareBackupFile,
+          sharePositionOrigin: rect,
+        );
+      } else {
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          subject: 'Document Renewal Reminder Backup',
+          text: l10n.shareBackupFile,
+        );
+      }
 
       // ローディング閉じる
       if (!mounted) return;
@@ -456,6 +486,84 @@ class _SettingsPageState extends State<SettingsPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const NotificationListPage(),
+                ),
+              );
+            },
+          ),
+          // サポート・フィードバック
+          ListTile(
+            leading: const Icon(Icons.support_agent, color: Colors.teal),
+            title: Text(l10n.supportTitle),
+            subtitle: Text(l10n.supportDescription),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              await showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Row(
+                    children: [
+                      const Icon(Icons.support_agent, color: Colors.teal),
+                      SizedBox(width: 8),
+                      Text(l10n.supportTitle),
+                    ],
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(l10n.supportDialogContent),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            const githubUrl = 'https://github.com/tangjunjie07/doc_renewal_reminder/issues';
+                            try {
+                              final uri = Uri.parse(githubUrl);
+                              final canLaunch = await canLaunchUrl(uri);
+                              if (canLaunch) {
+                                await launchUrl(uri);
+                              }
+                              // 失敗時は何も表示しない
+                            } catch (e) {
+                              // 例外時も何も表示しない
+                            }
+                          },
+                          child: Text(l10n.githubButton),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final subject = Uri.encodeComponent(l10n.supportMailSubject);
+                            final body = Uri.encodeComponent(l10n.supportMailBody);
+                            final mailUrl = 'mailto:yuanlusky@gmail.com?subject=$subject&body=$body';
+                            try {
+                              final uri = Uri.parse(mailUrl);
+                              final canLaunch = await canLaunchUrl(uri);
+                              if (canLaunch) {
+                                await launchUrl(uri);
+                              }
+                              // 失敗時は何も表示しない
+                            } catch (e) {
+                              // 例外時も何も表示しない
+                            }
+                          },
+                          child: Text(l10n.mailButton),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(l10n.cancel),
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [], // actionsは空に
                 ),
               );
             },

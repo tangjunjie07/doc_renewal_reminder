@@ -8,6 +8,7 @@ A Flutter cross-platform app for managing document renewals and providing intell
 
 ## ✨ Features
 
+
 - 👨‍👩‍👧‍👦 **Family member management** - Manage multiple family members
 - 📄 **Document management** - Track various document types with expiration dates
 - 🔔 **Rule-driven reminder system** - Smart reminders based on document type (e.g., 90 days before expiry for residence cards)
@@ -68,32 +69,28 @@ lib/
 ├── main.dart
 ├── app.dart                      # App root entry (MaterialApp / i18n)
 │
-├── core/                          # Core infrastructure
-│   ├── constants/
-│   │   ├── document_type.dart     # Document type enum with default reminder days
-│   │   ├── reminder_status.dart   # State machine enum (NORMAL/REMINDING/PAUSED)
-│   │   └── app_constants.dart
-│   │
+├── core/                         # Core infrastructure
+│   ├── biometric_auth_service.dart # Biometric auth (future)
+│   ├── biometric_gate.dart         # Biometric lock widget
+│   ├── calendar_service.dart       # Calendar sync logic
+│   ├── logger.dart                 # Logging utility
+│   ├── notification_service.dart   # Notification (legacy entry)
+│   ├── database/
+│   │   ├── db_provider.dart        # SQLite/Hive initialization
+│   │   ├── hive_provider.dart      # Web storage provider
+│   │   └── schema.sql              # DB schema
 │   ├── localization/
-│   │   ├── app_localizations.dart # intl auto-generated
+│   │   ├── app_localizations.dart  # intl auto-generated
 │   │   ├── notification_localizations.dart # Notification text i18n
-│   │   ├── intl_ja.arb            # Japanese (default)
-│   │   ├── intl_en.arb            # English
-│   │   └── intl_zh.arb            # Chinese
-│   │
-│   ├── notifications/
-│   │   └── notification_service.dart # Central notification management (3-tier defense)
-│   │
-│   ├── utils/
-│   │   ├── date_utils.dart
-│   │   └── log_utils.dart
-│   │
-│   └── database/
-│       ├── db_provider.dart       # SQLite / Hive initialization
-│       └── hive_provider.dart     # Web storage provider
+│   │   ├── intl_ja.arb             # Japanese (default)
+│   │   ├── intl_en.arb             # English
+│   │   └── intl_zh.arb             # Chinese
+│   └── widgets/
+│       └── startup_debug_page.dart # Debug startup info
 │
 ├── features/                      # Feature modules
 │   ├── family/
+│   │   ├── family_controller.dart
 │   │   ├── model/
 │   │   │   └── family_member.dart
 │   │   ├── repository/
@@ -103,43 +100,57 @@ lib/
 │   │       └── family_edit_page.dart
 │   │
 │   ├── documents/
+│   │   ├── document_controller.dart
+│   │   ├── document_model.dart
 │   │   ├── model/
 │   │   │   └── document.dart
 │   │   ├── repository/
 │   │   │   └── document_repository.dart
-│   │   └── ui/
-│   │       ├── document_all_list_page.dart
-│   │       ├── document_list_page.dart
-│   │       ├── document_edit_page.dart
-│   │       └── widgets/
-│   │           ├── document_action_dialog.dart  # Notification action dialog
-│   │           └── document_card.dart
+│   │   ├── ui/
+│   │   │   ├── document_action_dialog.dart
+│   │   │   ├── document_all_list_page.dart
+│   │   │   ├── document_edit_page.dart
+│   │   │   └── document_list_page.dart
+│   │   └── utils/
+│   │       └── ...
 │   │
 │   ├── reminder/
 │   │   ├── model/
 │   │   │   └── reminder_state.dart
 │   │   ├── repository/
 │   │   │   └── reminder_state_repository.dart
-│   │   ├── service/
-│   │   │   ├── reminder_engine.dart      # Core reminder logic
-│   │   │   └── reminder_scheduler.dart   # Notification scheduling
+│   │   └── service/
+│   │       ├── reminder_engine.dart      # Core reminder logic
+│   │       └── reminder_scheduler.dart   # Notification scheduling
+│   │
+│   ├── renewal_policy/
+│   │   ├── data/
+│   │   │   └── default_policies.dart
+│   │   ├── model/
+│   │   │   └── renewal_policy.dart
+│   │   ├── repository/
+│   │   │   └── renewal_policy_repository.dart
+│   │   └── service/
+│   │       └── policy_service.dart
 │   │
 │   ├── settings/
+│   │   ├── db_debug_page.dart
+│   │   ├── debug_notification_page.dart
+│   │   ├── language_selector.dart
+│   │   ├── notification_list_page.dart
 │   │   ├── service/
 │   │   │   └── data_export_service.dart  # JSON export/import
 │   │   └── settings_page.dart
 │   │
 │   └── navigation/
-│       └── main_navigation_page.dart      # BottomNavigationBar
+│       ├── main_navigation_page.dart      # BottomNavigationBar
+│       └── member_selector_dialog.dart
 │
 ├── shared/
-│   ├── widgets/
-│   │   ├── confirm_dialog.dart
-│   │   ├── date_picker_tile.dart
-│   │   └── empty_state.dart
-│   │
-│   └── theme/
-│       └── app_theme.dart
+│   └── widgets/
+│       ├── confirm_dialog.dart
+│       ├── date_picker_tile.dart
+│       └── empty_state.dart
 │
 └── l10n/                          # Generated localization files
 
@@ -148,9 +159,8 @@ assets/
 │   ├── intl_ja.arb            # Japanese (default)
 │   ├── intl_en.arb            # English
 │   └── intl_zh.arb            # Chinese
-│
 └── icons/                      # App icons (planned)
-
+```
 ## 🔧 Getting Started
 
 ### Prerequisites

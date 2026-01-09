@@ -777,4 +777,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataBackupDescription => 'Export and import data';
+
+  @override
+  String get supportTitle => 'Support & Feedback';
+
+  @override
+  String get supportDescription =>
+      'For questions or feedback, please contact us below.';
+
+  @override
+  String get supportDialogContent =>
+      'You can send feedback via GitHub or email. All messages will reach the developer.';
+
+  @override
+  String get githubButton => 'Feedback on GitHub';
+
+  @override
+  String get mailButton => 'Contact by Email';
+
+  @override
+  String get supportMailSubject => '[App Inquiry]';
+
+  @override
+  String get supportMailBody => 'Please enter your feedback or request.';
 }

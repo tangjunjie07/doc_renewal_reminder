@@ -748,4 +748,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get dataBackupDescription => '导出和导入数据';
+
+  @override
+  String get supportTitle => '支持与反馈';
+
+  @override
+  String get supportDescription => '如有意见或建议，请通过以下方式联系我们。';
+
+  @override
+  String get supportDialogContent => '您可以通过GitHub或邮件发送反馈，所有内容都会送达开发者。';
+
+  @override
+  String get githubButton => '通过GitHub反馈';
+
+  @override
+  String get mailButton => '邮件联系';
+
+  @override
+  String get supportMailSubject => '【应用咨询】';
+
+  @override
+  String get supportMailBody => '请填写您的意见或需求。';
 }

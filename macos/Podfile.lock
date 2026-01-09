@@ -20,6 +20,8 @@ PODS:
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
+  - url_launcher_macos (0.0.1):
+    - FlutterMacOS
 
 DEPENDENCIES:
   - device_info_plus (from `Flutter/ephemeral/.symlinks/plugins/device_info_plus/macos`)
@@ -31,6 +33,7 @@ DEPENDENCIES:
   - share_plus (from `Flutter/ephemeral/.symlinks/plugins/share_plus/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin`)
+  - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
 
 EXTERNAL SOURCES:
   device_info_plus:
@@ -51,6 +54,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
   sqflite_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/sqflite_darwin/darwin
+  url_launcher_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos
 
 SPEC CHECKSUMS:
   device_info_plus: 1b14eed9bf95428983aed283a8d51cce3d8c4215
@@ -62,6 +67,7 @@ SPEC CHECKSUMS:
   share_plus: 76dd39142738f7a68dd57b05093b5e8193f220f7
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
+  url_launcher_macos: 175a54c831f4375a6cf895875f716ee5af3888ce
 
 PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
 

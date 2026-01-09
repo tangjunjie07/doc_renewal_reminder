@@ -1492,6 +1492,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export and import data'**
   String get dataBackupDescription;
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support & Feedback'**
+  String get supportTitle;
+
+  /// No description provided for @supportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'For questions or feedback, please contact us below.'**
+  String get supportDescription;
+
+  /// No description provided for @supportDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'You can send feedback via GitHub or email. All messages will reach the developer.'**
+  String get supportDialogContent;
+
+  /// No description provided for @githubButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback on GitHub'**
+  String get githubButton;
+
+  /// No description provided for @mailButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact by Email'**
+  String get mailButton;
+
+  /// No description provided for @supportMailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'[App Inquiry]'**
+  String get supportMailSubject;
+
+  /// No description provided for @supportMailBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your feedback or request.'**
+  String get supportMailBody;
 }
 
 class _AppLocalizationsDelegate

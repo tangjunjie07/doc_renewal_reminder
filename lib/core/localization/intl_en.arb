@@ -273,5 +273,12 @@
   "unlockApp": "Authentication required to use the app",
   "enableBiometricPrompt": "Please authenticate to enable biometric authentication",
   "dataBackup": "Data Backup",
-  "dataBackupDescription": "Export and import data"
+  "dataBackupDescription": "Export and import data",
+  "supportTitle": "Support & Feedback",
+  "supportDescription": "For questions or feedback, please contact us below.",
+  "supportDialogContent": "You can send feedback via GitHub or email. All messages will reach the developer.",
+  "githubButton": "Feedback on GitHub",
+  "mailButton": "Contact by Email",
+  "supportMailSubject": "[App Inquiry]",
+  "supportMailBody": "Please enter your feedback or request."
 }

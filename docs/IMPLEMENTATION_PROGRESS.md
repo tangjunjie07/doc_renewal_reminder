@@ -283,29 +283,32 @@
 - **Android 実機テスト:** ✅ 完了（デバッグ / リリースのビルド & インストールを確認）
 - **iOS 実機テスト:** ⏳ 実施中 — これから実機にデプロイして動作確認を行います
 
+
 ## Phase 8.8: 自動テスト（Week 7.8）
 
-### 1. Widget テスト ❌
-- [❌] FamilyListPage のテスト
-- [❌] DocumentListPage のテスト
-- [❌] DocumentEditPage のテスト
-- [❌] SettingsPage のテスト
-- [❌] DocumentActionDialog のテスト
+### 1. Widget テスト（雛形作成・一部実行済み）
+- [△] FamilyListPage のテスト（雛形・一部失敗）
+- [△] DocumentListPage のテスト（雛形・一部失敗）
+- [△] DocumentEditPage のテスト（雛形・一部失敗）
+- [△] SettingsPage のテスト（雛形・一部失敗）
+- [○] DocumentActionDialog のテスト（雛形OK）
 
-### 2. Unit テスト ❌
-- [❌] FamilyRepository のテスト
-- [❌] DocumentRepository のテスト
-- [❌] ReminderStateRepository のテスト
-- [❌] ReminderEngine のテスト
-- [❌] ReminderScheduler のテスト
-- [❌] DataExportService のテスト
-- [❌] PolicyService のテスト
+### 2. Unit テスト（雛形作成・一部実行済み）
+- [△] FamilyRepository のテスト（雛形OK）
+- [△] DocumentRepository のテスト（雛形OK）
+- [△] ReminderStateRepository のテスト（雛形OK）
+- [△] ReminderEngine のテスト（雛形OK）
+- [△] ReminderScheduler のテスト（雛形OK）
+- [△] DataExportService のテスト（雛形OK）
+- [×] PolicyService のテスト（ファイル未実装）
 
-### 3. Integration テスト ❌
-- [❌] 証件追加から通知スケジュールまでの全体フロー
-- [❌] 更新開始→更新完了の状態遷移フロー
-- [❌] データエクスポート→インポートのフロー
-- [❌] 言語切り替えのテスト
+### 3. Integration テスト（雛形作成・全て実行OK）
+- [○] 証件追加から通知スケジュールまでの全体フロー（雛形OK）
+- [○] 更新開始→更新完了の状態遷移フロー（雛形OK）
+- [○] データエクスポート→インポートのフロー（雛形OK）
+- [○] 言語切り替えのテスト（雛形OK）
+
+> 雛形テストは全て作成・実行済み（一部Widget/Unitは依存エラーあり）。本格的なテスト実装・修正は今後対応。
 
 ## Phase 8.7: 通知キャンセル・更新ワークフロー機能（Week 7.7） ✅ 完了
 
