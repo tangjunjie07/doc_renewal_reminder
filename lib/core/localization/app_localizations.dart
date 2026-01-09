@@ -467,6 +467,78 @@ abstract class AppLocalizations {
   /// **'Your document is approaching its expiration date. Please check.'**
   String get notificationBodyGeneric;
 
+  /// No description provided for @notificationPermissionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification permission'**
+  String get notificationPermissionTitle;
+
+  /// No description provided for @notificationPermissionStatusChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking status…'**
+  String get notificationPermissionStatusChecking;
+
+  /// No description provided for @notificationPermissionGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get notificationPermissionGranted;
+
+  /// No description provided for @notificationPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Not allowed'**
+  String get notificationPermissionDenied;
+
+  /// No description provided for @notificationPermissionDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notifications'**
+  String get notificationPermissionDialogTitle;
+
+  /// No description provided for @notificationPermissionDialogContent.
+  ///
+  /// In en, this message translates to:
+  /// **'To receive renewal reminders we need notification permission. Allow?'**
+  String get notificationPermissionDialogContent;
+
+  /// No description provided for @notificationPermissionLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get notificationPermissionLater;
+
+  /// No description provided for @notificationPermissionAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get notificationPermissionAllow;
+
+  /// No description provided for @notificationPermissionDisabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications disabled'**
+  String get notificationPermissionDisabledTitle;
+
+  /// No description provided for @notificationPermissionDisabledContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable notifications in system settings. Open settings?'**
+  String get notificationPermissionDisabledContent;
+
+  /// No description provided for @openSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get openSettings;
+
+  /// No description provided for @notificationAlreadyGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are already allowed'**
+  String get notificationAlreadyGranted;
+
   /// No description provided for @documentTypeResidenceCard.
   ///
   /// In en, this message translates to:
@@ -736,6 +808,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'6 Months Before'**
   String get sixMonthsBefore;
+
+  /// No description provided for @oneYearBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'1 Year Before'**
+  String get oneYearBefore;
 
   /// No description provided for @reminderExample.
   ///

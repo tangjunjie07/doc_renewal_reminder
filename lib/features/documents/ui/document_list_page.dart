@@ -4,6 +4,9 @@ import 'package:add_2_calendar/add_2_calendar.dart';
 import '../../../core/database/db_provider.dart';
 import '../../../core/database/hive_provider.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/logger.dart';
+import '../../reminder/service/reminder_scheduler.dart';
+import '../../../core/calendar_service.dart';
 import '../repository/document_repository.dart';
 import '../model/document.dart';
 import '../../../features/family/model/family_member.dart';
@@ -97,14 +100,36 @@ class _DocumentListPageState extends State<DocumentListPage>
     );
     
     if (result != null) {
+      AppLogger.log('[DocumentList] Edit returned: type=${result.runtimeType} value=$result');
       // 一覧をリフレッシュ
       _animationController.reset();
       await _loadDocuments();
-      
-      // カレンダーデータが返されている場合、カレンダーに追加
-      if (result is Map<String, dynamic> && mounted) {
-        await _addToCalendar(result);
-      }
+
+      // pop 後の UI 操作や外部呼び出しは次フレームに遅延して実行する（Navigator のロック競合回避）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final l10n = AppLocalizations.of(context)!;
+        final message = document == null ? l10n.documentAdded : l10n.documentUpdated;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text(message)),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        if (result is Map<String, dynamic> && mounted) {
+          AppLogger.log('[DocumentList] Adding to calendar with data: $result');
+          // 非同期で実行（UI スレッドをブロックしない）
+          _addToCalendar(result);
+        }
+      });
     }
   }
   
@@ -114,8 +139,8 @@ class _DocumentListPageState extends State<DocumentListPage>
       final documentTypeLabel = _getDocumentTypeLabel(data['documentType'] as String);
       final expiryDate = data['expiryDate'] as DateTime;
       final reminderStartDate = data['reminderStartDate'] as DateTime;
-      final documentNumber = data['documentNumber'] as String;
-      final notes = data['notes'] as String;
+      final documentNumber = (data['documentNumber'] as String?) ?? '';
+      final notes = (data['notes'] as String?) ?? '';
       
       final Event event = Event(
         title: '$documentTypeLabel ${l10n.reminderStartDate}',
@@ -129,9 +154,44 @@ class _DocumentListPageState extends State<DocumentListPage>
         allDay: true,
       );
 
-      await Add2Calendar.addEvent2Cal(event);
+        try {
+          final added = await CalendarService.addEvent(event);
+          if (!added && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(l10n.failedToAddToCalendar)),
+                  ],
+                ),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        } catch (e, st) {
+          AppLogger.error('Failed to add to calendar: $e');
+          AppLogger.error(st.toString());
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text('${l10n.error}: $e')),
+                  ],
+                ),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
     } catch (e) {
-      debugPrint('Failed to add to calendar: $e');
+      AppLogger.error('Failed to add to calendar: $e');
     }
   }
 
@@ -245,7 +305,8 @@ class _DocumentListPageState extends State<DocumentListPage>
 
     if (confirmed == true) {
       try {
-        final l10n = AppLocalizations.of(context)!;
+        final scheduler = ReminderScheduler();
+        await scheduler.cancelForDocument(document.id!);
         await DocumentRepository.delete(document.id!);
         _animationController.reset();
         await _loadDocuments();
@@ -256,7 +317,7 @@ class _DocumentListPageState extends State<DocumentListPage>
                 children: [
                   const Icon(Icons.check_circle_outline, color: Colors.white),
                   const SizedBox(width: 12),
-                  Text(l10n.documentDeleted(_getDocumentTypeLabel(document.documentType))),
+                  Text(AppLocalizations.of(context)!.documentDeleted(_getDocumentTypeLabel(document.documentType))),
                 ],
               ),
               backgroundColor: Colors.green.shade700,
@@ -364,9 +425,9 @@ class _DocumentListPageState extends State<DocumentListPage>
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer
-                    .withOpacity(0.3),
+                  .colorScheme
+                  .primaryContainer
+                  .withAlpha((0.3 * 255).round()),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -497,8 +558,8 @@ class _DocumentListPageState extends State<DocumentListPage>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: _getDocumentTypeColors(document.documentType)[0]
-                                .withOpacity(0.3),
+                              color: _getDocumentTypeColors(document.documentType)[0]
+                                .withAlpha((0.3 * 255).round()),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -591,11 +652,11 @@ class _DocumentListPageState extends State<DocumentListPage>
                         ),
                         onPressed: () => _navigateToEdit(document),
                         tooltip: l10n.edit,
-                        style: IconButton.styleFrom(
+                          style: IconButton.styleFrom(
                           backgroundColor: Theme.of(context)
                               .colorScheme
                               .primaryContainer
-                              .withOpacity(0.5),
+                              .withAlpha((0.5 * 255).round()),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -605,8 +666,8 @@ class _DocumentListPageState extends State<DocumentListPage>
                         onPressed: () => _deleteDocument(document),
                         tooltip: l10n.delete,
                         style: IconButton.styleFrom(
-                          backgroundColor:
-                              Colors.red.shade50.withOpacity(0.8),
+                            backgroundColor:
+                              Colors.red.shade50.withAlpha((0.8 * 255).round()),
                         ),
                       ),
                     ],

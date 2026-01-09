@@ -2,6 +2,7 @@ import '../../../features/documents/model/document.dart';
 import '../../../features/renewal_policy/service/policy_service.dart';
 import '../model/reminder_state.dart';
 import '../repository/reminder_state_repository.dart';
+import 'package:doc_renewal_reminder/core/logger.dart';
 
 /// リマインダーエンジン
 /// 
@@ -19,14 +20,14 @@ class ReminderEngine {
           await checkDocument(document);
         } catch (e) {
           // 個別証件のエラーは記録して続行
-          print('Error checking document ${document.id}: $e');
+          AppLogger.error('Error checking document ${document.id}: $e');
         }
       }
 
       // PAUSED状態で予定完了日を過ぎたものを自動再開
       await _resumeExpiredPausedStates();
     } catch (e) {
-      print('Error in checkAllDocuments: $e');
+      AppLogger.error('Error in checkAllDocuments: $e');
       rethrow;
     }
   }
@@ -78,7 +79,7 @@ class ReminderEngine {
         }
       }
     } catch (e) {
-      print('Error checking document ${document.id}: $e');
+      AppLogger.error('Error checking document ${document.id}: $e');
       rethrow;
     }
   }
@@ -101,7 +102,7 @@ class ReminderEngine {
       final pausedState = state.pause(expectedFinishDate);
       await ReminderStateRepository.update(pausedState);
     } catch (e) {
-      print('Error confirming renewal started for document $documentId: $e');
+      AppLogger.error('Error confirming renewal started for document $documentId: $e');
       rethrow;
     }
   }
@@ -117,7 +118,7 @@ class ReminderEngine {
       final completedState = state.complete();
       await ReminderStateRepository.update(completedState);
     } catch (e) {
-      print('Error confirming renewal completed for document $documentId: $e');
+      AppLogger.error('Error confirming renewal completed for document $documentId: $e');
       rethrow;
     }
   }
@@ -131,11 +132,11 @@ class ReminderEngine {
           final resumedState = state.resume();
           await ReminderStateRepository.update(resumedState);
         } catch (e) {
-          print('Error resuming state for document ${state.documentId}: $e');
+          AppLogger.error('Error resuming state for document ${state.documentId}: $e');
         }
       }
     } catch (e) {
-      print('Error in _resumeExpiredPausedStates: $e');
+      AppLogger.error('Error in _resumeExpiredPausedStates: $e');
       rethrow;
     }
   }

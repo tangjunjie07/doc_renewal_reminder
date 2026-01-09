@@ -240,9 +240,9 @@ class _FamilyEditPageState extends State<FamilyEditPage>
                         ),
                         filled: true,
                         fillColor: Theme.of(context)
-                            .colorScheme
-                            .surfaceVariant
-                            .withOpacity(0.3),
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withAlpha((0.3 * 255).round()),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
@@ -295,13 +295,13 @@ class _FamilyEditPageState extends State<FamilyEditPage>
                         color: Theme.of(context)
                             .colorScheme
                             .secondaryContainer
-                            .withOpacity(0.3),
+                            .withAlpha((0.3 * 255).round()),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: Theme.of(context)
                               .colorScheme
                               .secondary
-                              .withOpacity(0.3),
+                              .withAlpha((0.3 * 255).round()),
                         ),
                       ),
                       child: Row(
@@ -447,7 +447,7 @@ class _FamilyEditPageState extends State<FamilyEditPage>
             side: BorderSide(
               color: isSelected
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                  : Theme.of(context).colorScheme.outline.withAlpha((0.5 * 255).round()),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -463,16 +463,16 @@ class _FamilyEditPageState extends State<FamilyEditPage>
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
+          decoration: BoxDecoration(
           color: Theme.of(context)
-              .colorScheme
-              .surfaceVariant
-              .withOpacity(0.3),
+            .colorScheme
+            .surfaceContainerHighest
+            .withAlpha((0.3 * 255).round()),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _dateOfBirth != null
                 ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                : Theme.of(context).colorScheme.outline.withAlpha((0.3 * 255).round()),
             width: _dateOfBirth != null ? 2 : 1,
           ),
         ),

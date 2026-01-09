@@ -4,6 +4,8 @@ import 'package:add_2_calendar/add_2_calendar.dart';
 import '../../../core/database/db_provider.dart';
 import '../../../core/database/hive_provider.dart';
 import '../../../core/localization/app_localizations.dart';
+import '../../../core/logger.dart';
+import '../../../core/calendar_service.dart';
 import '../repository/document_repository.dart';
 import 'document_edit_page.dart';
 import 'document_action_dialog.dart';
@@ -179,9 +181,9 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
         allDay: true,
       );
 
-      await Add2Calendar.addEvent2Cal(event);
+      await CalendarService.addEvent(event);
     } catch (e) {
-      debugPrint('Failed to add to calendar: $e');
+      AppLogger.error('Failed to add to calendar: $e');
     }
   }
 
@@ -320,9 +322,9 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer
-                    .withOpacity(0.3),
+                  .colorScheme
+                  .primaryContainer
+                  .withAlpha((0.3 * 255).round()),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -454,7 +456,7 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
                       boxShadow: [
                         BoxShadow(
                           color: _getDocumentTypeColors(document.documentType)[0]
-                              .withOpacity(0.3),
+                                        .withAlpha((0.3 * 255).round()),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -603,7 +605,7 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
                           backgroundColor: Theme.of(context)
                               .colorScheme
                               .primaryContainer
-                              .withOpacity(0.5),
+                              .withAlpha((0.5 * 255).round()),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -613,8 +615,8 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
                         onPressed: () => _confirmDelete(docWithMember),
                         tooltip: l10n.delete,
                         style: IconButton.styleFrom(
-                          backgroundColor:
-                              Colors.red.shade50.withOpacity(0.8),
+                            backgroundColor:
+                              Colors.red.shade50.withAlpha((0.8 * 255).round()),
                         ),
                       ),
                     ],
@@ -784,7 +786,7 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
   }
 
   Future<void> _navigateToEdit(DocumentWithMember docWithMember) async {
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
         builder: (context) => DocumentEditPage(
@@ -793,9 +795,18 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
         ),
       ),
     );
-    if (result == true) {
+
+    if (result != null) {
       _animationController.reset();
       await _loadDocuments();
+
+      // pop 後の UI 操作は次フレームに遅延して実行（Navigator ロック回避）
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (result is Map<String, dynamic>) {
+          _addToCalendar(result);
+        }
+      });
     }
   }
 

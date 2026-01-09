@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,14 +7,17 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:permission_handler/permission_handler.dart';
 import '../../app.dart';
 import '../../core/localization/app_localizations.dart';
 import '../../core/localization/notification_localizations.dart';
-import '../../core/biometric_auth_service.dart';
+import '../../core/logger.dart';
+// Biometric authentication removed
 import 'service/data_export_service.dart';
 import 'db_debug_page.dart';
 import 'notification_list_page.dart';
 import 'debug_notification_page.dart';
+import 'language_selector.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -23,15 +28,13 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   String? _savedLanguageCode;
-  bool _biometricAuthEnabled = false;
-  bool _biometricAvailable = false;
-  List<String> _availableBiometrics = [];
+  // biometric auth removed
 
   @override
   void initState() {
     super.initState();
     _loadSavedLanguage();
-    _loadBiometricSettings();
+    _loadNotificationPermissionStatus();
   }
 
   Future<void> _loadSavedLanguage() async {
@@ -44,100 +47,103 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _loadBiometricSettings() async {
-    try {
-      final authService = BiometricAuthService.instance;
-      final canAuth = await authService.canCheckBiometrics();
-      final biometrics = await authService.getAvailableBiometrics();
-      final isEnabled = await authService.isBiometricAuthEnabled();
+  // biometric settings removed
 
+  bool? _notificationGranted = true;
+
+  Future<void> _loadNotificationPermissionStatus() async {
+    try {
+      final status = await Permission.notification.status;
       if (mounted) {
         setState(() {
-          _biometricAvailable = canAuth;
-          _availableBiometrics = biometrics.map((b) => b.name).toList();
-          _biometricAuthEnabled = isEnabled;
+          _notificationGranted = status.isGranted;
         });
       }
     } catch (e) {
-      debugPrint('[SettingsPage] Error loading biometric settings: $e');
+      AppLogger.error('[SettingsPage] Error loading notification permission: $e');
     }
   }
 
-  Future<void> _toggleBiometricAuth(bool value) async {
+  Future<void> _handleNotificationPermissionTap(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
-    
     try {
-      if (value) {
-        // 生体認証を有効化する前に、実際に認証できるか確認
-        final authService = BiometricAuthService.instance;
-        final authenticated = await authService.authenticate(
-          reason: l10n.enableBiometricPrompt,
-        );
-
-        if (!authenticated) {
-          // 認証失敗
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(l10n.authenticationFailed),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-          return;
-        }
-      }
-
-      // 設定を保存
-      await BiometricAuthService.instance.setBiometricAuthEnabled(value);
-      
-      if (mounted) {
-        setState(() {
-          _biometricAuthEnabled = value;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              value ? l10n.biometricEnabled : l10n.biometricDisabled,
-            ),
-            backgroundColor: value ? Colors.green : Colors.grey,
+      final status = await Permission.notification.status;
+      if (status.isGranted) {
+        // 許可済みでもユーザーが設定画面を開きたい可能性があるため
+        // スナックバーではなくダイアログで「設定を開く」選択を出す
+        final open = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.notificationAlreadyGranted),
+            content: Text(l10n.notificationPermissionGranted),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+              FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.openSettings)),
+            ],
           ),
         );
+
+        if (open == true) {
+          await openAppSettings();
+        }
+
+        await _loadNotificationPermissionStatus();
+        return;
+      }
+
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.notificationPermissionDialogTitle),
+          content: Text(l10n.notificationPermissionDialogContent),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.notificationPermissionLater)),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.notificationPermissionAllow)),
+          ],
+        ),
+      );
+
+      if (ok == true) {
+        final result = await Permission.notification.request();
+        if (!result.isGranted) {
+          final open = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(l10n.notificationPermissionDisabledTitle),
+              content: Text(l10n.notificationPermissionDisabledContent),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l10n.cancel)),
+                FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(l10n.openSettings)),
+              ],
+            ),
+          );
+
+          if (open == true) {
+            await openAppSettings();
+          }
+        }
+
+        await _loadNotificationPermissionStatus();
       }
     } catch (e) {
-      debugPrint('[SettingsPage] Error toggling biometric auth: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('エラーが発生しました: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      AppLogger.error('[SettingsPage] Error requesting notification permission: $e');
     }
   }
+
+  // biometric toggle removed
 
   void _changeLanguage(BuildContext context, Locale locale) async {
     MyApp.setLocale(context, locale);
     // 通知用の言語設定も保存
     await NotificationLocalizations.saveLanguageCode(locale.languageCode);
-    if (context.mounted) {
-      setState(() {
-        _savedLanguageCode = locale.languageCode;
-      });
-      // 言語切り替え後はpopせずにそのまま設定画面に残る
-    }
+    if (!mounted) return;
+    setState(() {
+      _savedLanguageCode = locale.languageCode;
+    });
+    // 言語切り替え後はpopせずにそのまま設定画面に残る
   }
 
-  bool _isCurrentLocale(BuildContext context, String languageCode) {
-    // 保存された言語がある場合はそれを使用、なければLocalizationsから取得
-    if (_savedLanguageCode != null) {
-      return _savedLanguageCode == languageCode;
-    }
-    final currentLocale = Localizations.localeOf(context);
-    return currentLocale.languageCode == languageCode;
-  }
+  // Removed unused _isCurrentLocale helper (was unused and caused analyzer warning)
 
   // データエクスポート
   Future<void> _exportData(BuildContext context) async {
@@ -175,15 +181,14 @@ class _SettingsPageState extends State<SettingsPage> {
       if (confirmed != true) return;
 
       // ローディング表示
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
-      }
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
 
       // エクスポート実行
       await DataExportService.shareFile(
@@ -191,40 +196,38 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
       // ローディング閉じる
-      if (context.mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Text(l10n.exportSuccess),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Text(l10n.exportSuccess),
+            ],
           ),
-        );
-      }
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
       // ローディング閉じる
-      if (context.mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(child: Text('${l10n.exportFailed}: $e')),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Text('${l10n.exportFailed}: $e')),
+            ],
           ),
-        );
-      }
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -269,9 +272,9 @@ class _SettingsPageState extends State<SettingsPage> {
         try {
           final documentsDir = await getApplicationDocumentsDirectory();
           initialDirectory = documentsDir.path;
-          debugPrint('[Import] 📂 初期ディレクトリ: $initialDirectory');
+          AppLogger.log('[Import] 📂 初期ディレクトリ: $initialDirectory');
         } catch (e) {
-          debugPrint('[Import] ⚠️ 初期ディレクトリ取得エラー: $e');
+          AppLogger.error('[Import] ⚠️ 初期ディレクトリ取得エラー: $e');
         }
       }
 
@@ -290,15 +293,14 @@ class _SettingsPageState extends State<SettingsPage> {
       }
 
       // ローディング表示
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
-        );
-      }
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
 
       // インポート実行
       final file = File(filePath);
@@ -310,58 +312,39 @@ class _SettingsPageState extends State<SettingsPage> {
       final importResult = await DataExportService.importFromJson(data);
 
       // ローディング閉じる
-      if (context.mounted) {
-        Navigator.pop(context);
+      if (!mounted) return;
+      Navigator.pop(context);
 
-        if (importResult.success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      l10n.importSuccess(
-                        importResult.memberCount,
-                        importResult.documentCount,
-                      ),
+      if (importResult.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n.importSuccess(
+                      importResult.memberCount,
+                      importResult.documentCount,
                     ),
                   ),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 4),
+                ),
+              ],
             ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.error, color: Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text('${l10n.importFailed}: ${importResult.error}')),
-                ],
-              ),
-              backgroundColor: Colors.red,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      // ローディング閉じる（エラー時）
-      if (context.mounted) {
-        Navigator.pop(context);
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
                 const Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 12),
-                Expanded(child: Text('${l10n.importFailed}: $e')),
+                Expanded(child: Text('${l10n.importFailed}: ${importResult.error}')),
               ],
             ),
             backgroundColor: Colors.red,
@@ -369,6 +352,23 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         );
       }
+    } catch (e) {
+      // ローディング閉じる（エラー時）
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(child: Text('${l10n.importFailed}: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -381,54 +381,14 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: ListView(
         children: [
-          ListTile(
-            leading: const Icon(Icons.language),
-            title: Text(l10n.language),
-            subtitle: Text(l10n.changeAppLanguage),
+          // Language selector (single product-level component)
+          LanguageSelector(
+            savedLanguageCode: _savedLanguageCode,
+            onSelected: (code) {
+              final locale = Locale(code);
+              _changeLanguage(context, locale);
+            },
           ),
-          const Divider(),
-          ListTile(
-            leading: Icon(
-              _isCurrentLocale(context, 'en') ? Icons.check_circle : Icons.circle_outlined,
-              color: _isCurrentLocale(context, 'en') ? Colors.green : null,
-            ),
-            title: const Text('English'),
-            trailing: _isCurrentLocale(context, 'en') 
-                ? const Icon(Icons.check, color: Colors.green) 
-                : null,
-            onTap: () => _changeLanguage(context, const Locale('en')),
-          ),
-          ListTile(
-            leading: Icon(
-              _isCurrentLocale(context, 'zh') ? Icons.check_circle : Icons.circle_outlined,
-              color: _isCurrentLocale(context, 'zh') ? Colors.green : null,
-            ),
-            title: const Text('中文 (Chinese)'),
-            trailing: _isCurrentLocale(context, 'zh') 
-                ? const Icon(Icons.check, color: Colors.green) 
-                : null,
-            onTap: () => _changeLanguage(context, const Locale('zh')),
-          ),
-          ListTile(
-            leading: Icon(
-              _isCurrentLocale(context, 'ja') ? Icons.check_circle : Icons.circle_outlined,
-              color: _isCurrentLocale(context, 'ja') ? Colors.green : null,
-            ),
-            title: const Text('日本語 (Japanese)'),
-            trailing: _isCurrentLocale(context, 'ja') 
-                ? const Icon(Icons.check, color: Colors.green) 
-                : null,
-            onTap: () => _changeLanguage(context, const Locale('ja')),
-          ),
-          const Divider(thickness: 2),
-          // セキュリティセクション
-          ListTile(
-            leading: const Icon(Icons.security, color: Colors.blue),
-            title: Text(l10n.securitySettings),
-            subtitle: Text(l10n.securitySettingsDescription),
-          ),
-          // 生体認証は段階的導入のため、設定画面では非表示にする
-          const SizedBox.shrink(),
           const Divider(thickness: 2),
           // データエクスポート/インポート
           ListTile(
@@ -451,6 +411,36 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () => _importData(context),
           ),
           const Divider(thickness: 2),
+          // 通知許可（説明→要求）
+          ListTile(
+            leading: Icon(
+              Icons.notifications,
+              color: _notificationGranted == null
+                  ? Colors.orange
+                  : (_notificationGranted == true ? Colors.green : Colors.grey),
+            ),
+            title: Text(l10n.notificationPermissionTitle),
+            subtitle: Text(_notificationGranted == null
+                ? l10n.notificationPermissionStatusChecking
+                : (_notificationGranted == true
+                    ? l10n.notificationPermissionGranted
+                    : l10n.notificationPermissionDenied)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_notificationGranted == true) ...[
+                  const Icon(Icons.check_circle, color: Colors.green),
+                ] else if (_notificationGranted == false) ...[
+                  const Icon(Icons.cancel, color: Colors.grey),
+                ] else ...[
+                  const SizedBox.shrink(),
+                ],
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+            onTap: () => _handleNotificationPermissionTap(context),
+          ),
           // 通知情報一覧
           ListTile(
             leading: const Icon(Icons.notifications_outlined, color: Colors.orange),

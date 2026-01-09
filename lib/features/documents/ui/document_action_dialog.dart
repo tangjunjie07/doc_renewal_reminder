@@ -8,6 +8,7 @@ import '../../reminder/repository/reminder_state_repository.dart';
 import '../../reminder/service/reminder_engine.dart';
 import '../../reminder/service/reminder_scheduler.dart';
 import '../../family/repository/family_repository.dart';
+import 'package:doc_renewal_reminder/core/logger.dart';
 
 /// 証件アクションダイアログ
 /// 通知の一時停止・再開・完了を管理
@@ -391,7 +392,7 @@ class _DocumentActionDialogState extends State<DocumentActionDialog> {
         payload: 'document:${widget.document.id}',
       );
       
-      print('[DocumentActionDialog] Scheduled expiry notification for ${widget.document.id} at $notificationDate');
+      AppLogger.log('[DocumentActionDialog] Scheduled expiry notification for ${widget.document.id} at $notificationDate');
     }
   }
 

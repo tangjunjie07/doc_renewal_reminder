@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/notification_service.dart';
+import '../../core/logger.dart';
+import '../../core/calendar_service.dart';
 import '../../features/reminder/service/reminder_scheduler.dart';
 import '../../features/documents/repository/document_repository.dart';
 import '../../features/family/repository/family_repository.dart';
@@ -29,7 +31,7 @@ class _DebugNotificationPageState extends State<DebugNotificationPage> {
     setState(() {
       _logs.add('[${DateTime.now().toString().substring(11, 19)}] $message');
     });
-    print('[DebugNotification] $message');
+    AppLogger.log('[DebugNotification] $message');
   }
 
   Future<void> _runDiagnostics() async {
@@ -171,14 +173,15 @@ class _DebugNotificationPageState extends State<DebugNotificationPage> {
         allDay: false,
       );
       
-      final result = await Add2Calendar.addEvent2Cal(event);
-      _log(result ? '✅ カレンダーに追加' : '❌ カレンダー追加失敗');
-      
+      final added = await CalendarService.addEvent(event);
+
+      _log(added ? '✅ カレンダーに追加' : '❌ カレンダー追加失敗');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result ? 'カレンダーに追加しました' : 'カレンダー追加に失敗しました'),
-            backgroundColor: result ? Colors.green : Colors.red,
+            content: Text(added ? 'カレンダーに追加しました' : 'カレンダー追加に失敗しました'),
+            backgroundColor: added ? Colors.green : Colors.red,
           ),
         );
       }

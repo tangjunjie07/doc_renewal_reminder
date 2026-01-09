@@ -214,6 +214,44 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your document is approaching its expiration date. Please check.';
 
   @override
+  String get notificationPermissionTitle => 'Notification permission';
+
+  @override
+  String get notificationPermissionStatusChecking => 'Checking status…';
+
+  @override
+  String get notificationPermissionGranted => 'Allowed';
+
+  @override
+  String get notificationPermissionDenied => 'Not allowed';
+
+  @override
+  String get notificationPermissionDialogTitle => 'Enable notifications';
+
+  @override
+  String get notificationPermissionDialogContent =>
+      'To receive renewal reminders we need notification permission. Allow?';
+
+  @override
+  String get notificationPermissionLater => 'Later';
+
+  @override
+  String get notificationPermissionAllow => 'Allow';
+
+  @override
+  String get notificationPermissionDisabledTitle => 'Notifications disabled';
+
+  @override
+  String get notificationPermissionDisabledContent =>
+      'Please enable notifications in system settings. Open settings?';
+
+  @override
+  String get openSettings => 'Open settings';
+
+  @override
+  String get notificationAlreadyGranted => 'Notifications are already allowed';
+
+  @override
   String get documentTypeResidenceCard => 'Residence Card';
 
   @override
@@ -358,6 +396,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sixMonthsBefore => '6 Months Before';
+
+  @override
+  String get oneYearBefore => '1 Year Before';
 
   @override
   String get reminderExample => 'Notes for renewal process, etc.';

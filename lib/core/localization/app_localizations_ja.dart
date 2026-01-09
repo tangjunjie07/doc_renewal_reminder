@@ -209,6 +209,44 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notificationBodyGeneric => '証件の有効期限が近づいています。確認してください。';
 
   @override
+  String get notificationPermissionTitle => '通知許可';
+
+  @override
+  String get notificationPermissionStatusChecking => '状態を確認中…';
+
+  @override
+  String get notificationPermissionGranted => '許可済み';
+
+  @override
+  String get notificationPermissionDenied => '未許可';
+
+  @override
+  String get notificationPermissionDialogTitle => '通知のお願い';
+
+  @override
+  String get notificationPermissionDialogContent =>
+      '期限リマインダーを受け取るために通知の許可が必要です。よろしいですか？';
+
+  @override
+  String get notificationPermissionLater => 'あとで';
+
+  @override
+  String get notificationPermissionAllow => '許可する';
+
+  @override
+  String get notificationPermissionDisabledTitle => '通知が無効です';
+
+  @override
+  String get notificationPermissionDisabledContent =>
+      '端末の設定から通知を有効にしてください。設定を開きますか？';
+
+  @override
+  String get openSettings => '設定を開く';
+
+  @override
+  String get notificationAlreadyGranted => '通知は既に許可されています';
+
+  @override
   String get documentTypeResidenceCard => '在留カード';
 
   @override
@@ -345,6 +383,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get sixMonthsBefore => '6ヶ月前';
+
+  @override
+  String get oneYearBefore => '1年前';
 
   @override
   String get reminderExample => '更新時の注意事項など';

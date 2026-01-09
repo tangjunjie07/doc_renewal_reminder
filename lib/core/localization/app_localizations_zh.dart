@@ -209,6 +209,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String get notificationBodyGeneric => '您的证件有效期即将到期，请及时查看。';
 
   @override
+  String get notificationPermissionTitle => '通知权限';
+
+  @override
+  String get notificationPermissionStatusChecking => '正在检查状态…';
+
+  @override
+  String get notificationPermissionGranted => '已允许';
+
+  @override
+  String get notificationPermissionDenied => '未允许';
+
+  @override
+  String get notificationPermissionDialogTitle => '通知请求';
+
+  @override
+  String get notificationPermissionDialogContent => '为了接收续期提醒，我们需要通知权限。允许吗？';
+
+  @override
+  String get notificationPermissionLater => '稍后';
+
+  @override
+  String get notificationPermissionAllow => '允许';
+
+  @override
+  String get notificationPermissionDisabledTitle => '通知已禁用';
+
+  @override
+  String get notificationPermissionDisabledContent => '请在系统设置中启用通知。要打开设置吗？';
+
+  @override
+  String get openSettings => '打开设置';
+
+  @override
+  String get notificationAlreadyGranted => '通知已被允许';
+
+  @override
   String get documentTypeResidenceCard => '在留卡';
 
   @override
@@ -344,6 +380,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sixMonthsBefore => '提前6个月';
+
+  @override
+  String get oneYearBefore => '提前1年';
 
   @override
   String get reminderExample => '更新时的注意事项等';
@@ -563,7 +602,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get insuranceCard => '保险卡';
 
   @override
-  String get mynumberCard => '个人编号卡';
+  String get mynumberCard => '身份证';
 
   @override
   String get otherDocument => '其他';

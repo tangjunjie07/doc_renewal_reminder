@@ -5,6 +5,7 @@ import '../model/document.dart';
 import '../../family/model/family_member.dart';
 import '../../family/repository/family_repository.dart';
 import '../../reminder/repository/reminder_state_repository.dart';
+import 'package:doc_renewal_reminder/core/logger.dart';
 
 /// 証件とメンバー情報を含むクラス
 class DocumentWithMember {
@@ -43,7 +44,7 @@ class DocumentRepository {
         return await db.insert(table, document.toMap());
       }
     } catch (e) {
-      print('[DocumentRepository] Error inserting document: $e');
+      AppLogger.error('[DocumentRepository] Error inserting document: $e');
       rethrow; // UI層でエラーを表示できるように再スロー
     }
   }
@@ -62,7 +63,7 @@ class DocumentRepository {
         return res.map((e) => Document.fromMap(e)).toList();
       }
     } catch (e) {
-      print('[DocumentRepository] Error getting all documents: $e');
+      AppLogger.error('[DocumentRepository] Error getting all documents: $e');
       return []; // 空リストを返して画面を表示可能にする
     }
   }
@@ -86,7 +87,7 @@ class DocumentRepository {
         return res.map((e) => Document.fromMap(e)).toList();
       }
     } catch (e) {
-      print('[DocumentRepository] Error getting documents by memberId $memberId: $e');
+      AppLogger.error('[DocumentRepository] Error getting documents by memberId $memberId: $e');
       return []; // 空リストを返して画面を表示可能にする
     }
   }
@@ -114,7 +115,7 @@ class DocumentRepository {
         return null;
       }
     } catch (e) {
-      print('[DocumentRepository] Error getting document by id $id: $e');
+      AppLogger.error('[DocumentRepository] Error getting document by id $id: $e');
       return null; // nullを返して処理を継続可能にする
     }
   }
@@ -136,7 +137,7 @@ class DocumentRepository {
         );
       }
     } catch (e) {
-      print('[DocumentRepository] Error updating document ${document.id}: $e');
+      AppLogger.error('[DocumentRepository] Error updating document ${document.id}: $e');
       rethrow; // UI層でエラーを表示できるように再スロー
     }
   }
@@ -149,7 +150,7 @@ class DocumentRepository {
       try {
         await ReminderStateRepository.deleteByDocumentId(id);
       } catch (e) {
-        print('[DocumentRepository] Warning: Failed to delete reminder state for document $id: $e');
+        AppLogger.error('[DocumentRepository] Warning: Failed to delete reminder state for document $id: $e');
         // ReminderStateの削除失敗は警告のみ（証件削除は続行）
       }
       
@@ -167,7 +168,7 @@ class DocumentRepository {
         );
       }
     } catch (e) {
-      print('[DocumentRepository] Error deleting document $id: $e');
+      AppLogger.error('[DocumentRepository] Error deleting document $id: $e');
       rethrow; // UI層でエラーを表示できるように再スロー
     }
   }
@@ -197,7 +198,7 @@ class DocumentRepository {
       
       return result;
     } catch (e) {
-      print('[DocumentRepository] Error getting all documents with member info: $e');
+      AppLogger.error('[DocumentRepository] Error getting all documents with member info: $e');
       return []; // 空リストを返して画面を表示可能にする
     }
   }

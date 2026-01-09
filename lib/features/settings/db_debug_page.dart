@@ -110,21 +110,21 @@ class _DbDebugPageState extends State<DbDebugPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Card(
+                    const Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'IndexedDB Info (Web)',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const Divider(),
-                            const Text(
+                            Divider(),
+                            Text(
                               'To view IndexedDB in Chrome:\n'
                               '1. Press F12 to open DevTools\n'
                               '2. Go to "Application" tab\n'

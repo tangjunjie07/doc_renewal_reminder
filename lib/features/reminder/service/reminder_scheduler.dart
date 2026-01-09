@@ -10,6 +10,7 @@ import '../model/reminder_state.dart';
 import '../repository/reminder_state_repository.dart';
 import 'reminder_engine.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:doc_renewal_reminder/core/logger.dart';
 
 /// リマインダースケジューラー（3段階防御システム）
 /// 
@@ -55,13 +56,13 @@ class ReminderScheduler {
         try {
           await _scheduleForDocument(state);
         } catch (e) {
-          print('[ReminderScheduler] Error scheduling notification for document ${state.documentId}: $e');
+            AppLogger.error('[ReminderScheduler] Error scheduling notification for document ${state.documentId}: $e');
         }
       }
       
-      print('[ReminderScheduler] ✅ Scheduled notifications for ${remindingStates.length} documents');
+        AppLogger.log('[ReminderScheduler] ✅ Scheduled notifications for ${remindingStates.length} documents');
     } catch (e) {
-      print('[ReminderScheduler] ❌ Error in scheduleAll: $e');
+        AppLogger.error('[ReminderScheduler] ❌ Error in scheduleAll: $e');
       rethrow;
     }
   }
@@ -77,7 +78,7 @@ class ReminderScheduler {
 
       await _scheduleForDocument(state);
     } catch (e) {
-      print('[ReminderScheduler] Error scheduling for document $documentId: $e');
+        AppLogger.error('[ReminderScheduler] Error scheduling for document $documentId: $e');
       rethrow;
     }
   }
@@ -90,9 +91,9 @@ class ReminderScheduler {
       await _notificationService.cancel(documentId * 1000 + 2); // 第三防衛線
       // 有効期限日用の特別通知もキャンセル（ID: documentId*1000 + 999）
       await _notificationService.cancel(documentId * 1000 + 999);
-      print('[ReminderScheduler] ✅ Cancelled all notifications for document $documentId');
+      AppLogger.log('[ReminderScheduler] ✅ Cancelled all notifications for document $documentId');
     } catch (e) {
-      print('[ReminderScheduler] Error canceling notification for document $documentId: $e');
+      AppLogger.error('[ReminderScheduler] Error canceling notification for document $documentId: $e');
       rethrow;
     }
   }
@@ -103,14 +104,14 @@ class ReminderScheduler {
       // 証件情報を取得
       final document = await DocumentRepository.getById(state.documentId);
       if (document == null) {
-        print('[ReminderScheduler] Document not found: ${state.documentId}');
+          AppLogger.log('[ReminderScheduler] Document not found: ${state.documentId}');
         return;
       }
 
       // メンバー情報を取得
       final member = await FamilyRepository.getById(document.memberId);
       if (member == null) {
-        print('[ReminderScheduler] Member not found: ${document.memberId}');
+          AppLogger.log('[ReminderScheduler] Member not found: ${document.memberId}');
         return;
       }
 
@@ -127,11 +128,11 @@ class ReminderScheduler {
         Duration(days: document.customReminderDays ?? policy.daysBeforeExpiry),
       );
       final highRiskDate = document.expiryDate.subtract(
-        Duration(days: highRiskDaysBefore),
+        const Duration(days: highRiskDaysBefore),
       );
       final now = DateTime.now();
 
-      print('[ReminderScheduler] Document ${document.id}: reminderStart=$reminderStartDate, highRisk=$highRiskDate, expiry=${document.expiryDate}');
+        AppLogger.log('[ReminderScheduler] Document ${document.id}: reminderStart=$reminderStartDate, highRisk=$highRiskDate, expiry=${document.expiryDate}');
 
       // 第一防衛線: 遠期唤醒（リマインダー開始日の単発通知）
       final reminderStartDateOnly = DateTime(reminderStartDate.year, reminderStartDate.month, reminderStartDate.day);
@@ -152,18 +153,16 @@ class ReminderScheduler {
           ),
           payload: payload,
         );
-        print('[ReminderScheduler]   第一防衛線: ${reminderStartDate.toIso8601String()}');
-      } else if (reminderStartDateOnly.isAtSameMomentAs(todayOnly) || reminderStartDateOnly.isBefore(todayOnly)) {
-        // 今日または過去 → 10秒後に通知（バックグラウンドで確実に表示）
-        final scheduledTime = now.add(const Duration(seconds: 10));
-        await _notificationService.scheduleNotification(
+          AppLogger.log('[ReminderScheduler]   第一防衛線: ${reminderStartDate.toIso8601String()}');
+      } else {
+        // 今日または過去 → 即時通知
+        await _notificationService.showNotification(
           id: document.id! * 1000 + 0,
           title: title,
           body: body,
-          scheduledDate: scheduledTime,
           payload: payload,
         );
-        print('[ReminderScheduler]   第一防衛線: 10秒後に送信（${reminderStartDateOnly.isBefore(todayOnly) ? '過去日付' : '今日が開始日'}）');
+          AppLogger.log('[ReminderScheduler]   第一防衛線: 即時送信（${reminderStartDateOnly.isBefore(todayOnly) ? '過去日付' : '今日が開始日'}）');
       }
 
       // 第二防衛線: 近期催办（高危期から毎日ループ）★核心★
@@ -171,7 +170,7 @@ class ReminderScheduler {
         await _notificationService.scheduleRepeatingNotification(
           id: document.id! * 1000 + 1,
           title: title,
-          body: '⚠️ ${body}', // 強調表示
+          body: '⚠️ $body', // 強調表示
           startDate: DateTime(
             highRiskDate.year,
             highRiskDate.month,
@@ -182,18 +181,18 @@ class ReminderScheduler {
           interval: RepeatInterval.daily,
           payload: payload,
         );
-        print('[ReminderScheduler]   第二防衛線: ${highRiskDate.toIso8601String()} から毎日ループ');
+          AppLogger.log('[ReminderScheduler]   第二防衛線: ${highRiskDate.toIso8601String()} から毎日ループ');
       } else if (document.expiryDate.isAfter(now)) {
         // 既に高危期に入っている → 今日から毎日ループ
         await _notificationService.scheduleRepeatingNotification(
           id: document.id! * 1000 + 1,
           title: title,
-          body: '⚠️ ${body}',
+          body: '⚠️ $body',
           startDate: DateTime(now.year, now.month, now.day, 9, 0),
           interval: RepeatInterval.daily,
           payload: payload,
         );
-        print('[ReminderScheduler]   第二防衛線: 今日から毎日ループ（高危期進行中）');
+          AppLogger.log('[ReminderScheduler]   第二防衛線: 今日から毎日ループ（高危期進行中）');
       }
 
       // 第三防衛線: 過期轰炸（有効期限日から毎日ループ）
@@ -204,7 +203,7 @@ class ReminderScheduler {
         
         await _notificationService.scheduleRepeatingNotification(
           id: document.id! * 1000 + 2,
-          title: '🚨 ${title}',
+          title: '🚨 $title',
           body: expiredBody,
           startDate: DateTime(
             expiryDate.year,
@@ -216,7 +215,7 @@ class ReminderScheduler {
           interval: RepeatInterval.daily,
           payload: payload,
         );
-        print('[ReminderScheduler]   第三防衛線: ${expiryDate.toIso8601String()} から毎日ループ');
+          AppLogger.log('[ReminderScheduler]   第三防衛線: ${expiryDate.toIso8601String()} から毎日ループ');
       } else {
         // 既に有効期限切れ → 今日から毎日ループ
         final languageCode = await NotificationLocalizations.getLanguageCode();
@@ -224,16 +223,16 @@ class ReminderScheduler {
         
         await _notificationService.scheduleRepeatingNotification(
           id: document.id! * 1000 + 2,
-          title: '🚨 ${title}',
+          title: '🚨 $title',
           body: expiredBody,
           startDate: DateTime(now.year, now.month, now.day, 9, 0),
           interval: RepeatInterval.daily,
           payload: payload,
         );
-        print('[ReminderScheduler]   第三防衛線: 今日から毎日ループ（期限切れ）');
+          AppLogger.log('[ReminderScheduler]   第三防衛線: 今日から毎日ループ（期限切れ）');
       }
     } catch (e) {
-      print('[ReminderScheduler] ❌ Error scheduling notification: $e');
+        AppLogger.error('[ReminderScheduler] ❌ Error scheduling notification: $e');
     }
   }
 
@@ -246,7 +245,7 @@ class ReminderScheduler {
         languageCode,
       );
     } catch (e) {
-      print('[ReminderScheduler] Error generating notification title: $e');
+        AppLogger.error('[ReminderScheduler] Error generating notification title: $e');
       final languageCode = await NotificationLocalizations.getLanguageCode();
       return NotificationLocalizations.getNotificationTitleGeneric(languageCode);
     }
@@ -269,7 +268,7 @@ class ReminderScheduler {
         languageCode: languageCode,
       );
     } catch (e) {
-      print('[ReminderScheduler] Error generating notification body: $e');
+        AppLogger.error('[ReminderScheduler] Error generating notification body: $e');
       final languageCode = await NotificationLocalizations.getLanguageCode();
       return NotificationLocalizations.getNotificationBodyGeneric(languageCode);
     }

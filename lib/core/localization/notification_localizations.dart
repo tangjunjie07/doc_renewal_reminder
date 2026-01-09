@@ -73,7 +73,7 @@ class NotificationLocalizations {
         return '$documentTypeName需要更新';
       case 'ja':
       default:
-        return '${documentTypeName}の更新が必要です';
+        return '$documentTypeNameの更新が必要です';
     }
   }
   
@@ -93,7 +93,7 @@ class NotificationLocalizations {
         return '$memberName的$documentTypeName还有$daysUntilExpiry天就要过期了';
       case 'ja':
       default:
-        return '${memberName}さんの${documentTypeName}はあと${daysUntilExpiry}日で有効期限が切れます';
+        return '$memberNameさんの$documentTypeNameはあと$daysUntilExpiry日で有効期限が切れます';
     }
   }
   

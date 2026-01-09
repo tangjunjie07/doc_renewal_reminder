@@ -92,7 +92,7 @@ class _MemberSelectorDialogState extends State<MemberSelectorDialog> {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.person_search,
                     color: Colors.white,
                     size: 28,
@@ -136,7 +136,7 @@ class _MemberSelectorDialogState extends State<MemberSelectorDialog> {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    color: Theme.of(context).colorScheme.outline.withAlpha((0.2 * 255).round()),
                   ),
                 ),
               ),

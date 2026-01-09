@@ -6,6 +6,7 @@ import 'core/database/db_provider.dart';
 import 'core/database/hive_provider.dart';
 import 'core/notification_service.dart';
 import 'core/localization/notification_localizations.dart';
+import 'core/logger.dart';
 import 'core/widgets/startup_debug_page.dart';
 import 'features/reminder/service/reminder_scheduler.dart';
 
@@ -38,7 +39,7 @@ void main() async {
       // 新仕様: 3段階防御システム（RepeatInterval使用）
       final scheduler = ReminderScheduler();
       await scheduler.scheduleAll();
-      print('[Main] ✅ All reminders scheduled with 3-tier defense system');
+      AppLogger.log('[Main] ✅ All reminders scheduled with 3-tier defense system');
     }
 
     // Note: Default policies are now handled by PolicyService

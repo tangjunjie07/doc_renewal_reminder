@@ -9,6 +9,8 @@ import '../../documents/model/document.dart';
 import '../../documents/repository/document_repository.dart';
 import '../../reminder/model/reminder_state.dart';
 import '../../reminder/repository/reminder_state_repository.dart';
+import '../../../core/logger.dart';
+import '../../../core/notification_service.dart';
 
 /// データエクスポート/インポートサービス
 /// 家族メンバー、証件、リマインダー状態をJSON形式でバックアップ・リストア
@@ -16,7 +18,7 @@ class DataExportService {
   /// データをJSONにエクスポート
   static Future<Map<String, dynamic>> exportToJson() async {
     try {
-      debugPrint('[DataExport] 📤 エクスポート開始');
+      AppLogger.log('[DataExport] 📤 エクスポート開始');
 
       // 全データを取得
       final members = await FamilyRepository.getAll();
@@ -31,10 +33,10 @@ class DataExportService {
         'reminderStates': reminderStates.map((r) => r.toMap()).toList(),
       };
 
-      debugPrint('[DataExport] ✅ エクスポート完了: ${members.length}人, ${documents.length}件');
+      AppLogger.log('[DataExport] ✅ エクスポート完了: ${members.length}人, ${documents.length}件');
       return exportData;
     } catch (e) {
-      debugPrint('[DataExport] ❌ エクスポートエラー: $e');
+      AppLogger.error('[DataExport] ❌ エクスポートエラー: $e');
       rethrow;
     }
   }
@@ -55,9 +57,9 @@ class DataExportService {
           final documentsDir = await getApplicationDocumentsDirectory();
           final documentsFile = File('${documentsDir.path}/$fileName');
           await documentsFile.writeAsString(jsonString);
-          debugPrint('[DataExport] 📄 Documentsフォルダに保存: ${documentsFile.path}');
+          AppLogger.log('[DataExport] 📄 Documentsフォルダに保存: ${documentsFile.path}');
         } catch (e) {
-          debugPrint('[DataExport] ⚠️ Documents保存エラー（継続）: $e');
+          AppLogger.error('[DataExport] ⚠️ Documents保存エラー（継続）: $e');
         }
       }
 
@@ -65,11 +67,11 @@ class DataExportService {
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/$fileName');
       await file.writeAsString(jsonString);
-      debugPrint('[DataExport] 📄 一時ファイル作成: ${file.path}');
+      AppLogger.log('[DataExport] 📄 一時ファイル作成: ${file.path}');
 
       return file;
     } catch (e) {
-      debugPrint('[DataExport] ❌ ファイル作成エラー: $e');
+      AppLogger.error('[DataExport] ❌ ファイル作成エラー: $e');
       rethrow;
     }
   }
@@ -77,7 +79,7 @@ class DataExportService {
   /// ファイル共有（iOS/Android）
   static Future<void> shareFile({String? shareText}) async {
     try {
-      debugPrint('[DataExport] 📲 ファイル共有開始');
+      AppLogger.log('[DataExport] 📲 ファイル共有開始');
 
       final file = await createExportFile();
       final result = await Share.shareXFiles(
@@ -87,12 +89,12 @@ class DataExportService {
       );
 
       if (result.status == ShareResultStatus.success) {
-        debugPrint('[DataExport] ✅ 共有成功');
+        AppLogger.log('[DataExport] ✅ 共有成功');
       } else {
-        debugPrint('[DataExport] ⚠️ 共有キャンセル: ${result.status}');
+        AppLogger.log('[DataExport] ⚠️ 共有キャンセル: ${result.status}');
       }
     } catch (e) {
-      debugPrint('[DataExport] ❌ 共有エラー: $e');
+      AppLogger.error('[DataExport] ❌ 共有エラー: $e');
       rethrow;
     }
   }
@@ -100,7 +102,7 @@ class DataExportService {
   /// JSONファイルからインポート
   static Future<void> importFromFile(File file) async {
     try {
-      debugPrint('[DataImport] 📥 インポート開始: ${file.path}');
+      AppLogger.log('[DataImport] 📥 インポート開始: ${file.path}');
 
       // ファイル読み込み
       final jsonString = await file.readAsString();
@@ -114,7 +116,7 @@ class DataExportService {
 
       await importFromJson(data);
     } catch (e) {
-      debugPrint('[DataImport] ❌ インポートエラー: $e');
+      AppLogger.error('[DataImport] ❌ インポートエラー: $e');
       rethrow;
     }
   }
@@ -125,7 +127,7 @@ class DataExportService {
       final data = json.decode(jsonString) as Map<String, dynamic>;
       await importFromJson(data);
     } catch (e) {
-      debugPrint('[DataImport] ❌ JSON文字列インポートエラー: $e');
+      AppLogger.error('[DataImport] ❌ JSON文字列インポートエラー: $e');
       rethrow;
     }
   }
@@ -137,11 +139,11 @@ class DataExportService {
     int reminderStateCount = 0;
 
     try {
-      debugPrint('[DataImport] 📥 データインポート開始');
+      AppLogger.log('[DataImport] 📥 データインポート開始');
 
       // ⚠️ 既存データを全削除（上書きモード）
       await clearAllData();
-      debugPrint('[DataImport] 🗑️ 既存データを削除しました');
+      AppLogger.log('[DataImport] 🗑️ 既存データを削除しました');
 
       // トランザクション風に全データをインポート
       // 1. 家族メンバーをインポート
@@ -168,7 +170,7 @@ class DataExportService {
           }
           memberCount++;
         } catch (e) {
-          debugPrint('[DataImport] ⚠️ メンバーインポートエラー: $e');
+          AppLogger.error('[DataImport] ⚠️ メンバーインポートエラー: $e');
         }
       }
 
@@ -185,7 +187,7 @@ class DataExportService {
           // メンバーIDをマッピング
           final newMemberId = memberIdMap[oldMemberId];
           if (newMemberId == null) {
-            debugPrint('[DataImport] ⚠️ 証件のメンバーが見つかりません: memberId=$oldMemberId');
+            AppLogger.log('[DataImport] ⚠️ 証件のメンバーが見つかりません: memberId=$oldMemberId');
             continue;
           }
 
@@ -209,7 +211,7 @@ class DataExportService {
           }
           documentCount++;
         } catch (e) {
-          debugPrint('[DataImport] ⚠️ 証件インポートエラー: $e');
+          AppLogger.error('[DataImport] ⚠️ 証件インポートエラー: $e');
         }
       }
 
@@ -224,7 +226,7 @@ class DataExportService {
           // 証件IDをマッピング
           final newDocumentId = documentIdMap[oldDocumentId];
           if (newDocumentId == null) {
-            debugPrint('[DataImport] ⚠️ リマインダー状態の証件が見つかりません: documentId=$oldDocumentId');
+            AppLogger.log('[DataImport] ⚠️ リマインダー状態の証件が見つかりません: documentId=$oldDocumentId');
             continue;
           }
 
@@ -242,11 +244,11 @@ class DataExportService {
           await ReminderStateRepository.insert(newState);
           reminderStateCount++;
         } catch (e) {
-          debugPrint('[DataImport] ⚠️ リマインダー状態インポートエラー: $e');
+          AppLogger.error('[DataImport] ⚠️ リマインダー状態インポートエラー: $e');
         }
       }
 
-      debugPrint('[DataImport] ✅ インポート完了: $memberCount人, $documentCount件, $reminderStateCount状態');
+      AppLogger.log('[DataImport] ✅ インポート完了: $memberCount人, $documentCount件, $reminderStateCount状態');
       
       return ImportResult(
         success: true,
@@ -255,7 +257,7 @@ class DataExportService {
         reminderStateCount: reminderStateCount,
       );
     } catch (e) {
-      debugPrint('[DataImport] ❌ インポートエラー: $e');
+      AppLogger.error('[DataImport] ❌ インポートエラー: $e');
       return ImportResult(
         success: false,
         memberCount: memberCount,
@@ -269,7 +271,15 @@ class DataExportService {
   /// 全データを削除（リストア前のクリーンアップ用）
   static Future<void> clearAllData() async {
     try {
-      debugPrint('[DataExport] 🗑️ 全データ削除開始');
+      AppLogger.log('[DataExport] 🗑️ 全データ削除開始');
+
+      // インポート前に既存の通知を全てキャンセル
+      try {
+        await NotificationService.instance.cancelAllNotifications();
+        AppLogger.log('[DataExport] 🔕 全通知をキャンセルしました');
+      } catch (e) {
+        AppLogger.error('[DataExport] ⚠️ 通知キャンセルに失敗しました: $e');
+      }
 
       // リマインダー状態を削除
       final states = await ReminderStateRepository.getAll();
@@ -295,9 +305,9 @@ class DataExportService {
         }
       }
 
-      debugPrint('[DataExport] ✅ 全データ削除完了');
+      AppLogger.log('[DataExport] ✅ 全データ削除完了');
     } catch (e) {
-      debugPrint('[DataExport] ❌ データ削除エラー: $e');
+      AppLogger.error('[DataExport] ❌ データ削除エラー: $e');
       rethrow;
     }
   }

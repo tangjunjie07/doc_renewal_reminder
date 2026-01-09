@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/localization/app_localizations.dart';
-import 'core/biometric_gate.dart';
 import 'features/navigation/main_navigation_page.dart';
 
 // Global navigator key for notification navigation
@@ -70,9 +69,7 @@ class _MyAppState extends State<MyApp> {
         Locale('zh'), // Chinese
         Locale('ja'), // Japanese
       ],
-      home: const BiometricGate(
-        child: MainNavigationPage(),
-      ),
+      home: const MainNavigationPage(),
     );
   }
 }

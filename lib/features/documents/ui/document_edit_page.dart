@@ -7,7 +7,10 @@ import '../model/document.dart';
 import '../repository/document_repository.dart';
 import '../../renewal_policy/data/default_policies.dart';
 import '../../reminder/service/reminder_scheduler.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import '../../reminder/service/reminder_engine.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../core/logger.dart';
+import '../../../core/calendar_service.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
 
 /// 証件追加・編集画面（製品レベルUI）
@@ -39,6 +42,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
   String? _customReminderFrequency; // カスタム通知頻度
   bool _syncToCalendar = false; // カレンダー自動同期
   bool _isLoading = false;
+  bool _isPopping = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -57,7 +61,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       _expiryDate = widget.document!.expiryDate;
       _customReminderDays = widget.document!.customReminderDays;
       _customReminderFrequency = widget.document!.customReminderFrequency;
-      _syncToCalendar = false; // 編集時は常にfalse
+      _syncToCalendar = false; // 編集時は常にfalse（一覧側の既存カレンダー登録は編集画面で自動的にONにしない）
       // 編集画面: nullの場合は元のドキュメントのタイプのデフォルト値を設定
       _customReminderDays ??= _getDefaultReminderDays(widget.document!.documentType);
       _customReminderFrequency ??= _getDefaultReminderFrequency(widget.document!.documentType);
@@ -98,6 +102,12 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     super.dispose();
   }
 
+  void _safePop([dynamic result]) {
+    if (_isPopping) return;
+    _isPopping = true;
+    if (mounted) Navigator.pop(context, result);
+  }
+
   // NOTE: カレンダー同期機能はDocumentAllListPageに移行済み
   // これらのメソッドは将来の拡張用に保持
   // ignore: unused_element
@@ -125,8 +135,8 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         allDay: true,
       );
 
-      final result = await Add2Calendar.addEvent2Cal(event);
-      
+      final added = await CalendarService.addEvent(event);
+
       if (mounted) {
         final l10nMsg = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,20 +144,20 @@ class _DocumentEditPageState extends State<DocumentEditPage>
             content: Row(
               children: [
                 Icon(
-                  result ? Icons.check_circle : Icons.error,
+                  added ? Icons.check_circle : Icons.error,
                   color: Colors.white,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    result 
-                        ? l10nMsg.addedToCalendar 
+                    added
+                        ? l10nMsg.addedToCalendar
                         : l10nMsg.failedToAddToCalendar,
                   ),
                 ),
               ],
             ),
-            backgroundColor: result ? Colors.green : Colors.red,
+            backgroundColor: added ? Colors.green : Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -193,7 +203,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       
       // 過去日の場合はカレンダーに追加しない（ダイアログを表示しない）
       if (reminderStartDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
-        debugPrint('Reminder start date is in the past, skipping calendar sync');
+        AppLogger.log('Reminder start date is in the past, skipping calendar sync');
         return;
       }
       
@@ -209,10 +219,10 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         allDay: true,
       );
 
-      await Add2Calendar.addEvent2Cal(event);
+      await CalendarService.addEvent(event);
     } catch (e) {
       // サイレント実行のため、エラーは無視
-      debugPrint('Failed to add to calendar: $e');
+      AppLogger.error('Failed to add to calendar: $e');
     }
   }
 
@@ -265,7 +275,6 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     setState(() => _isLoading = true);
 
     try {
-      final l10n = AppLocalizations.of(context)!;
       final document = Document(
         id: widget.document?.id,
         memberId: widget.memberId,
@@ -279,7 +288,23 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       );
 
       if (widget.document == null) {
-        await DocumentRepository.insert(document);
+        // 新規挿入: 挿入後にDBの新しいIDを受け取り、ReminderState を作成して個別スケジュールする
+        final newId = await DocumentRepository.insert(document);
+        AppLogger.log('[DocumentEdit] Inserted new document id=$newId');
+
+        // 挿入されたドキュメントを取得してリマインダーエンジンで状態を初期化
+        final newDoc = await DocumentRepository.getById(newId);
+        if (newDoc != null) {
+          try {
+            final engine = ReminderEngine();
+            await engine.checkDocument(newDoc);
+            final scheduler = ReminderScheduler();
+            await scheduler.scheduleForDocument(newId);
+            AppLogger.log('[DocumentEdit] ✅ 新規証件の通知スケジュール完了 (id=$newId)');
+          } catch (e) {
+            AppLogger.error('[DocumentEdit] ⚠️ 新規証件の通知スケジュールエラー: $e');
+          }
+        }
       } else {
         await DocumentRepository.update(document);
       }
@@ -287,15 +312,21 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       // 通知をスケジュール（新規追加・編集の両方で実行）
       try {
         final scheduler = ReminderScheduler();
-        
-        // 効率化：全体ではなく、このドキュメントだけを更新
-        // （scheduleAll()は内部でcancelAllNotifications()を呼ぶため全件再スケジュール）
-        await scheduler.scheduleAll();
-        
-        debugPrint('[DocumentEdit] ✅ 通知スケジュール完了');
+
+        // 既存実装は全件キャンセルして再スケジュールしていたが、
+        // 他証件に影響が出るためこの証件のみキャンセルして再スケジュールする。
+        if (document.id != null) {
+          await scheduler.cancelForDocument(document.id!);
+          await scheduler.scheduleForDocument(document.id!);
+        } else {
+          // 新規作成の場合はドキュメントIDが生成されるまで待てない。
+          // 全件スケジュールは避け、バックグラウンド起動時などで補正される想定。
+          AppLogger.log('[DocumentEdit] 新規作成: 個別スケジュールは保留');
+        }
+
+        AppLogger.log('[DocumentEdit] ✅ 通知スケジュール完了（対象: ${document.id ?? '新規'})');
       } catch (e) {
-        debugPrint('[DocumentEdit] ⚠️ 通知スケジュールエラー: $e');
-        // エラーが発生してもカード保存自体は成功しているので続行
+        AppLogger.error('[DocumentEdit] ⚠️ 通知スケジュールエラー: $e');
       }
 
       // ローディングを解除
@@ -348,57 +379,14 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                     allDay: true,
                   );
 
-                  await Add2Calendar.addEvent2Cal(event);
+                  await CalendarService.addEvent(event);
                 } catch (e) {
-                  debugPrint('Failed to add to calendar: $e');
+                  AppLogger.error('Failed to add to calendar: $e');
                 }
               }
             }
-          
-          // カレンダー同期がある場合はダイアログで隠れないよう遅延して長めに表示
-          if (shouldSyncToCalendar) {
-            await Future.delayed(const Duration(milliseconds: 500));
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(l10n.documentAdded)),
-                    ],
-                  ),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
-            }
-          } else {
-            // カレンダー同期なしは従来通り即時表示（短め）
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(l10n.documentAdded)),
-                    ],
-                  ),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              );
-            }
-          }
+          // カレンダー同期ありは長め、なしは短めで共通メソッドで表示
+          _showDocumentAddedSnackBar(long: shouldSyncToCalendar);
           // 「次を追加」後は通常の処理（ページに留まる）
         } else {
           // カレンダー同期データを準備
@@ -406,7 +394,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           if (_syncToCalendar) {
             final reminderDays = _customReminderDays ?? _getDefaultReminderDays(_selectedType);
             final reminderStartDate = _expiryDate!.subtract(Duration(days: reminderDays));
-            
+
             // 過去日でない場合のみカレンダーデータを返す
             if (!reminderStartDate.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
               calendarData = {
@@ -418,33 +406,10 @@ class _DocumentEditPageState extends State<DocumentEditPage>
               };
             }
           }
-          
+
           // 一覧画面に戻る（カレンダーデータも返す）
-          Navigator.pop(context, calendarData ?? true);
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      widget.document == null ? l10n.documentAdded : l10n.documentUpdated,
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
+          AppLogger.log('[DocumentEdit] Returning calendarData: ${calendarData ?? 'null/true'}');
+          _safePop(calendarData ?? true);
         }
       }
     } catch (e) {
@@ -504,7 +469,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
             ),
             leading: IconButton(
               icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () => Navigator.pop(context, true), // 常にリフレッシュ
+              onPressed: () => _safePop(true), // 常にリフレッシュ
             ),
           ),
 
@@ -604,7 +569,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                           fillColor: Theme.of(context)
                               .colorScheme
                               .surfaceContainerHighest
-                              .withOpacity(0.3),
+                              .withAlpha((0.3 * 255).round()),
                         ),
                       ),
                       
@@ -634,7 +599,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                           fillColor: Theme.of(context)
                               .colorScheme
                               .surfaceContainerHighest
-                              .withOpacity(0.3),
+                              .withAlpha((0.3 * 255).round()),
                         ),
                       ),
                       
@@ -644,10 +609,10 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.3 * 255).round()),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                            color: Theme.of(context).colorScheme.outline.withAlpha((0.2 * 255).round()),
                           ),
                         ),
                         child: Row(
@@ -780,37 +745,37 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         'type': 'residence_card',
         'label': l10n.residenceCard,
         'icon': Icons.credit_card,
-        'colors': [Color(0xFF6B4EFF), Color(0xFF9D7BFF)],
+        'colors': const [Color(0xFF6B4EFF), Color(0xFF9D7BFF)],
       },
       {
         'type': 'passport',
         'label': l10n.passport,
         'icon': Icons.travel_explore,
-        'colors': [Color(0xFF00B4DB), Color(0xFF0083B0)],
+        'colors': const [Color(0xFF00B4DB), Color(0xFF0083B0)],
       },
       {
         'type': 'drivers_license',
         'label': l10n.driversLicense,
         'icon': Icons.directions_car,
-        'colors': [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+        'colors': const [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
       },
       {
         'type': 'insurance_card',
         'label': l10n.insuranceCard,
         'icon': Icons.medical_services,
-        'colors': [Color(0xFF4CAF50), Color(0xFF81C784)],
+        'colors': const [Color(0xFF4CAF50), Color(0xFF81C784)],
       },
       {
         'type': 'mynumber_card',
         'label': l10n.mynumberCard,
         'icon': Icons.badge,
-        'colors': [Color(0xFFFF9800), Color(0xFFFFB74D)],
+        'colors': const [Color(0xFFFF9800), Color(0xFFFFB74D)],
       },
       {
         'type': 'other',
         'label': l10n.otherDocument,
         'icon': Icons.description,
-        'colors': [Color(0xFF9E9E9E), Color(0xFFBDBDBD)],
+        'colors': const [Color(0xFF9E9E9E), Color(0xFFBDBDBD)],
       },
     ];
 
@@ -859,18 +824,18 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                       : Theme.of(context)
                           .colorScheme
                           .surfaceContainerHighest
-                          .withOpacity(0.5),
+                          .withAlpha((0.5 * 255).round()),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected
                         ? Colors.transparent
-                        : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                        : Theme.of(context).colorScheme.outline.withAlpha((0.2 * 255).round()),
                     width: 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: (type['colors'] as List<Color>)[0].withOpacity(0.3),
+                            color: (type['colors'] as List<Color>)[0].withAlpha((0.3 * 255).round()),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -926,18 +891,18 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                     Theme.of(context)
                         .colorScheme
                         .surfaceContainerHighest
-                        .withOpacity(0.5),
+                        .withAlpha((0.5 * 255).round()),
                     Theme.of(context)
                         .colorScheme
                         .surfaceContainerHighest
-                        .withOpacity(0.5),
+                        .withAlpha((0.5 * 255).round()),
                   ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: _expiryDate != null
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
-                : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                ? Theme.of(context).colorScheme.primary.withAlpha((0.3 * 255).round())
+                : Theme.of(context).colorScheme.outline.withAlpha((0.2 * 255).round()),
             width: 2,
           ),
         ),
@@ -1007,6 +972,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       {'label': l10n.oneMonthBefore, 'days': 30, 'icon': Icons.looks_one},
       {'label': l10n.threeMonthsBefore, 'days': 90, 'icon': Icons.looks_3},
       {'label': l10n.sixMonthsBefore, 'days': 180, 'icon': Icons.looks_6},
+      {'label': l10n.oneYearBefore, 'days': 365, 'icon': Icons.calendar_today},
     ];
 
     return Wrap(
@@ -1041,7 +1007,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           side: BorderSide(
             color: isSelected
                 ? Theme.of(context).colorScheme.secondary
-                : Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                : Theme.of(context).colorScheme.outline.withAlpha((0.5 * 255).round()),
             width: isSelected ? 2 : 1,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1073,6 +1039,30 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       default:
         return DateFormat('MMM d, yyyy').format(date);
     }
+  }
+
+  // 共通: ドキュメント追加完了スナックバー表示
+  void _showDocumentAddedSnackBar({required bool long}) {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    final duration = long ? const Duration(seconds: 5) : const Duration(seconds: 2);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(child: Text(l10n.documentAdded)),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: duration,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
   }
 
   Widget _buildNotificationFrequencySelector() {
@@ -1107,7 +1097,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
             decoration: BoxDecoration(
               color: isSelected
                   ? Theme.of(context).colorScheme.primaryContainer
-                  : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                  : Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha((0.3 * 255).round()),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isSelected

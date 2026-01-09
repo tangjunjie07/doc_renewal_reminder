@@ -5,7 +5,10 @@ import '../repository/family_repository.dart';
 import '../model/family_member.dart';
 import 'family_edit_page.dart';
 import '../../documents/repository/document_repository.dart';
+import '../../reminder/service/reminder_scheduler.dart';
+import '../../../core/logger.dart';
 import '../../documents/ui/document_list_page.dart';
+import '../../documents/ui/document_edit_page.dart';
 import '../../../core/localization/app_localizations.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -90,16 +93,41 @@ class _FamilyListPageState extends State<FamilyListPage>
   }
 
   Future<void> _navigateToEdit([FamilyMember? member]) async {
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
         builder: (context) => FamilyEditPage(member: member),
       ),
     );
-    if (result == true) {
+
+    if (result != null) {
       _animationController.reset();
       await _loadMembers();
+
+      // If FamilyEditPage returned a memberId (int) because user chose "Save & Add Document",
+      // open DocumentEditPage for that member. Run in next frame to avoid Navigator lock.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (result is int) {
+          _openDocumentEditorAndRefresh(result);
+        }
+      });
     }
+  }
+
+  Future<void> _openDocumentEditorAndRefresh(int memberId) async {
+    if (!mounted) return;
+    await Navigator.push<dynamic>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DocumentEditPage(memberId: memberId),
+      ),
+    );
+
+    // After returning from DocumentEditPage, refresh member list to update document counts
+    if (!mounted) return;
+    _animationController.reset();
+    await _loadMembers();
   }
 
   void _navigateToDocumentList(FamilyMember member) {
@@ -173,7 +201,13 @@ class _FamilyListPageState extends State<FamilyListPage>
     if (confirmed == true) {
       try {
         final documents = await DocumentRepository.getByMemberId(member.id!);
+        final scheduler = ReminderScheduler();
         for (final doc in documents) {
+          try {
+            await scheduler.cancelForDocument(doc.id!);
+          } catch (e) {
+            AppLogger.error('Failed to cancel notifications for document ${doc.id}: $e');
+          }
           await DocumentRepository.delete(doc.id!);
         }
         _animationController.reset();
@@ -369,7 +403,7 @@ class _FamilyListPageState extends State<FamilyListPage>
             Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.primaryContainer.withAlpha((0.3 * 255).round()),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -507,7 +541,7 @@ class _FamilyListPageState extends State<FamilyListPage>
                         color: (isSelf
                                 ? Theme.of(context).colorScheme.primary
                                 : Theme.of(context).colorScheme.secondary)
-                            .withOpacity(0.3),
+                            .withAlpha((0.3 * 255).round()),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -561,7 +595,7 @@ class _FamilyListPageState extends State<FamilyListPage>
                                   color: Theme.of(context)
                                       .colorScheme
                                       .primary
-                                      .withOpacity(0.3),
+                                      .withAlpha((0.3 * 255).round()),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -664,7 +698,7 @@ class _FamilyListPageState extends State<FamilyListPage>
                       backgroundColor: Theme.of(context)
                           .colorScheme
                           .primaryContainer
-                          .withOpacity(0.5),
+                          .withAlpha((0.5 * 255).round()),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -676,7 +710,7 @@ class _FamilyListPageState extends State<FamilyListPage>
                       tooltip: l10n.deleteDocumentsTooltip,
                       style: IconButton.styleFrom(
                         backgroundColor:
-                            Colors.orange.shade50.withOpacity(0.8),
+                            Colors.orange.shade50.withAlpha((0.8 * 255).round()),
                       ),
                     )
                   else
@@ -687,7 +721,7 @@ class _FamilyListPageState extends State<FamilyListPage>
                       tooltip: l10n.deleteMemberTooltip,
                       style: IconButton.styleFrom(
                         backgroundColor:
-                            Colors.red.shade50.withOpacity(0.8),
+                            Colors.red.shade50.withAlpha((0.8 * 255).round()),
                       ),
                     ),
                 ],
