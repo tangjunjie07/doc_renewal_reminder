@@ -411,36 +411,40 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: () => _importData(context),
           ),
           const Divider(thickness: 2),
-          // 通知許可（説明→要求）
-          ListTile(
-            leading: Icon(
-              Icons.notifications,
-              color: _notificationGranted == null
-                  ? Colors.orange
-                  : (_notificationGranted == true ? Colors.green : Colors.grey),
-            ),
-            title: Text(l10n.notificationPermissionTitle),
-            subtitle: Text(_notificationGranted == null
-                ? l10n.notificationPermissionStatusChecking
-                : (_notificationGranted == true
-                    ? l10n.notificationPermissionGranted
-                    : l10n.notificationPermissionDenied)),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_notificationGranted == true) ...[
-                  const Icon(Icons.check_circle, color: Colors.green),
-                ] else if (_notificationGranted == false) ...[
-                  const Icon(Icons.cancel, color: Colors.grey),
-                ] else ...[
-                  const SizedBox.shrink(),
+          // 通知許可はiOSで非表示（システム設定との不整合回避）
+          if (!Platform.isIOS) ...[
+            // 通知許可（説明→要求）
+            ListTile(
+              leading: Icon(
+                Icons.notifications,
+                color: _notificationGranted == null
+                    ? Colors.orange
+                    : (_notificationGranted == true ? Colors.green : Colors.grey),
+              ),
+              title: Text(l10n.notificationPermissionTitle),
+              subtitle: Text(_notificationGranted == null
+                  ? l10n.notificationPermissionStatusChecking
+                  : (_notificationGranted == true
+                      ? l10n.notificationPermissionGranted
+                      : l10n.notificationPermissionDenied)),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_notificationGranted == true) ...[
+                    const Icon(Icons.check_circle, color: Colors.green),
+                  ] else if (_notificationGranted == false) ...[
+                    const Icon(Icons.cancel, color: Colors.grey),
+                  ] else ...[
+                    const SizedBox.shrink(),
+                  ],
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right),
                 ],
-                const SizedBox(width: 8),
-                const Icon(Icons.chevron_right),
-              ],
+              ),
+              onTap: () => _handleNotificationPermissionTap(context),
             ),
-            onTap: () => _handleNotificationPermissionTap(context),
-          ),
+          ],
+
           // 通知情報一覧
           ListTile(
             leading: const Icon(Icons.notifications_outlined, color: Colors.orange),
