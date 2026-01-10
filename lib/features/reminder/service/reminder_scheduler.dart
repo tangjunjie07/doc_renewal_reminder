@@ -155,17 +155,42 @@ class ReminderScheduler {
         );
           AppLogger.log('[ReminderScheduler]   第一防衛線: ${reminderStartDate.toIso8601String()}');
       } else {
-        // 今日または過去 → 即時通知
-        await _notificationService.showNotification(
-          id: document.id! * 1000 + 0,
-          title: title,
-          body: body,
-          payload: payload,
-        );
+        // 今日または過去 → 即時通知（ただし既に送信済みであればスキップ）
+        final lastNotified = state.lastNotificationDate;
+        final shouldSendImmediate = () {
+          if (lastNotified == null) return true;
+          final lastNotifiedDateOnly = DateTime(lastNotified.year, lastNotified.month, lastNotified.day);
+          // 既に同日またはリマインダー開始日以降に通知済みの場合は再送しない
+          return lastNotifiedDateOnly.isBefore(reminderStartDateOnly);
+        }();
+
+        if (shouldSendImmediate) {
+          await _notificationService.showNotification(
+            id: document.id! * 1000 + 0,
+            title: title,
+            body: body,
+            payload: payload,
+          );
+
+          // 通知送信日時を記録して重複を防ぐ
+          final updatedState = state.recordNotification();
+          try {
+            await ReminderStateRepository.update(updatedState);
+          } catch (e) {
+            AppLogger.error('[ReminderScheduler] Failed to update ReminderState after notification for document ${state.documentId}: $e');
+          }
+
           AppLogger.log('[ReminderScheduler]   第一防衛線: 即時送信（${reminderStartDateOnly.isBefore(todayOnly) ? '過去日付' : '今日が開始日'}）');
+        } else {
+          AppLogger.log('[ReminderScheduler]   第一防衛線: 既に通知済みのためスキップ');
+        }
       }
 
       // 第二防衛線: 近期催办（高危期から毎日ループ）★核心★
+      // determine notification frequency (supports 'daily' and 'weekly')
+      final frequency = document.customReminderFrequency ?? policy.reminderFrequency;
+      final interval = frequency == 'weekly' ? RepeatInterval.weekly : RepeatInterval.daily;
+
       if (highRiskDate.isAfter(now)) {
         await _notificationService.scheduleRepeatingNotification(
           id: document.id! * 1000 + 1,
@@ -178,21 +203,21 @@ class ReminderScheduler {
             9, // 09:00
             0,
           ),
-          interval: RepeatInterval.daily,
+          interval: interval,
           payload: payload,
         );
-          AppLogger.log('[ReminderScheduler]   第二防衛線: ${highRiskDate.toIso8601String()} から毎日ループ');
+          AppLogger.log('[ReminderScheduler]   第二防衛線: ${highRiskDate.toIso8601String()} から $frequency ループ');
       } else if (document.expiryDate.isAfter(now)) {
-        // 既に高危期に入っている → 今日から毎日ループ
+        // 既に高危期に入っている → 今日からループ
         await _notificationService.scheduleRepeatingNotification(
           id: document.id! * 1000 + 1,
           title: title,
           body: '⚠️ $body',
           startDate: DateTime(now.year, now.month, now.day, 9, 0),
-          interval: RepeatInterval.daily,
+          interval: interval,
           payload: payload,
         );
-          AppLogger.log('[ReminderScheduler]   第二防衛線: 今日から毎日ループ（高危期進行中）');
+          AppLogger.log('[ReminderScheduler]   第二防衛線: 今日から $frequency ループ（高危期進行中）');
       }
 
       // 第三防衛線: 過期轰炸（有効期限日から毎日ループ）

@@ -10,6 +10,7 @@ import '../../../core/calendar_service.dart';
 import '../repository/document_repository.dart';
 import '../model/document.dart';
 import '../../../features/family/model/family_member.dart';
+import '../../../features/renewal_policy/service/policy_service.dart';
 import 'document_edit_page.dart';
 import 'document_action_dialog.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -518,7 +519,7 @@ class _DocumentListPageState extends State<DocumentListPage>
 
   Widget _buildDocumentCard(Document document) {
     final l10n = AppLocalizations.of(context)!;
-    final daysUntilExpiry = document.expiryDate.difference(DateTime.now()).inDays;
+    final daysUntilExpiry = PolicyService.daysUntilExpiry(document);
     final isExpiringSoon = daysUntilExpiry <= 90;
     final isExpired = daysUntilExpiry < 0;
 

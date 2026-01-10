@@ -27,7 +27,7 @@ class DefaultPolicies {
   static RenewalPolicy get passport => RenewalPolicy(
         documentType: 'passport',
         daysBeforeExpiry: 180, // 6ヶ月前
-        reminderFrequency: 'biweekly',
+      reminderFrequency: 'weekly',
         autoRenewable: false,
         notes: 'policyNotesPassport',
       );
@@ -49,7 +49,7 @@ class DefaultPolicies {
   static RenewalPolicy get insuranceCard => RenewalPolicy(
         documentType: 'insurance_card',
         daysBeforeExpiry: 30, // 1ヶ月前（念のため）
-        reminderFrequency: 'monthly',
+      reminderFrequency: 'weekly',
         autoRenewable: true,
         notes: 'policyNotesInsuranceCard',
       );
@@ -60,7 +60,7 @@ class DefaultPolicies {
   static RenewalPolicy get mynumberCard => RenewalPolicy(
         documentType: 'mynumber_card',
         daysBeforeExpiry: 90, // 3ヶ月前
-        reminderFrequency: 'biweekly',
+      reminderFrequency: 'weekly',
         autoRenewable: false,
         notes: 'policyNotesMynumberCard',
       );
@@ -135,10 +135,10 @@ class DefaultPolicies {
         return 'reminderFrequencyDaily';
       case 'weekly':
         return 'reminderFrequencyWeekly';
+      // map unsupported frequencies to weekly for backward compatibility
       case 'biweekly':
-        return 'reminderFrequencyBiweekly';
       case 'monthly':
-        return 'reminderFrequencyMonthly';
+        return 'reminderFrequencyWeekly';
       default:
         return 'reminderFrequencyWeekly';
     }
@@ -147,7 +147,7 @@ class DefaultPolicies {
   /// 証件タイプのデフォルト通知頻度を取得
   /// 
   /// [documentType] 証件タイプ
-  /// 戻り値: デフォルトの通知頻度 ('daily' / 'weekly' / 'biweekly' / 'monthly')
+  /// 戻り値: デフォルトの通知頻度 ('daily' / 'weekly')
   static String getDefaultReminderFrequency(String documentType) {
     final policy = getByDocumentType(documentType);
     return policy.reminderFrequency;

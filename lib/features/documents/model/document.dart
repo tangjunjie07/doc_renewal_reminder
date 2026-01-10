@@ -24,7 +24,7 @@ class Document {
   final int? customReminderDays;
   
   /// カスタム通知頻度（nullの場合はデフォルトポリシーを使用）
-  /// 'daily' / 'weekly' / 'biweekly' / 'monthly'
+  /// 'daily' / 'weekly'
   final String? customReminderFrequency;
   
   /// カレンダーに自動同期するか

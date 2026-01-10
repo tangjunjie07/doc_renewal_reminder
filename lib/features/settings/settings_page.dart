@@ -503,7 +503,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Row(
                     children: [
                       const Icon(Icons.support_agent, color: Colors.teal),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(l10n.supportTitle),
                     ],
                   ),
@@ -563,7 +563,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ],
                   ),
-                  actions: [], // actionsは空に
+                  actions: const [], // actionsは空に
                 ),
               );
             },

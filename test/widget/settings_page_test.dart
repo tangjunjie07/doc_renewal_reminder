@@ -7,15 +7,15 @@ import 'package:doc_renewal_reminder/core/localization/app_localizations.dart';
 
 void main() {
   testWidgets('SettingsPage smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: const SettingsPage(),
-      localizationsDelegates: const [
+    await tester.pumpWidget(const MaterialApp(
+      home: SettingsPage(),
+      localizationsDelegates: [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('ja'), Locale('en'), Locale('zh')],
+      supportedLocales: [Locale('ja'), Locale('en'), Locale('zh')],
     ));
     expect(find.byType(SettingsPage), findsOneWidget);
   });

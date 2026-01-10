@@ -1071,8 +1071,6 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     final frequencies = [
       {'value': 'daily', 'label': l10n.reminderFrequencyDaily},
       {'value': 'weekly', 'label': l10n.reminderFrequencyWeekly},
-      {'value': 'biweekly', 'label': l10n.reminderFrequencyBiweekly},
-      {'value': 'monthly', 'label': l10n.reminderFrequencyMonthly},
     ];
 
     // 編集画面では初期値を保持、新規画面ではnullなので現在のタイプのデフォルト値を使用

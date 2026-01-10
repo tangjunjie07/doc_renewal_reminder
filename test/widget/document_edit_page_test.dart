@@ -7,15 +7,15 @@ import 'package:doc_renewal_reminder/core/localization/app_localizations.dart';
 
 void main() {
   testWidgets('DocumentEditPage smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: const DocumentEditPage(memberId: 1),
-      localizationsDelegates: const [
+    await tester.pumpWidget(const MaterialApp(
+      home: DocumentEditPage(memberId: 1),
+      localizationsDelegates: [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('ja'), Locale('en'), Locale('zh')],
+      supportedLocales: [Locale('ja'), Locale('en'), Locale('zh')],
     ));
     expect(find.byType(DocumentEditPage), findsOneWidget);
   });

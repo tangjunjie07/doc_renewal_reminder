@@ -11,6 +11,7 @@ import 'document_edit_page.dart';
 import 'document_action_dialog.dart';
 import '../../navigation/member_selector_dialog.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../renewal_policy/service/policy_service.dart';
 
 /// 全メンバーの証件一覧画面（製品レベルUI）
 /// 証件管理の中心画面
@@ -107,8 +108,7 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
     final normalDocs = <DocumentWithMember>[];
 
     for (final doc in docs) {
-      final daysUntilExpiry =
-          doc.document.expiryDate.difference(now).inDays;
+      final daysUntilExpiry = PolicyService.daysUntilExpiry(doc.document);
       if (daysUntilExpiry <= 90) {
         alertDocs.add(doc);
       } else {
@@ -413,8 +413,7 @@ class _DocumentAllListPageState extends State<DocumentAllListPage>
     final l10n = AppLocalizations.of(context)!;
     final document = docWithMember.document;
     final member = docWithMember.member;
-    final daysUntilExpiry =
-        document.expiryDate.difference(DateTime.now()).inDays;
+    final daysUntilExpiry = PolicyService.daysUntilExpiry(document);
     final isExpiringSoon = daysUntilExpiry <= 90;
     final isExpired = daysUntilExpiry < 0;
     final isSelf = member.relationship == 'self';
